@@ -2,78 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Camera PWA – Filters & Grain</title>
+  <title>Camera PWA – Filters & Color Mix</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
   <link rel="icon" href="data:,">
   <style>
-    :root{color-scheme:dark}
-    *{box-sizing:border-box}
-    body{
-      margin:0;background:#000;height:100vh;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      font-family:sans-serif;color:#fff;overflow:hidden
+    :root { color-scheme: dark }
+    * { box-sizing: border-box }
+    body {
+      margin: 0; background: #000; height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-family: sans-serif; color: #fff; overflow: hidden
     }
 
-    /* live preview & captured photo */
-    #camera-view,#photo-output{
-      width:100%;max-width:480px;aspect-ratio:3/4;
-      object-fit:cover;background:#000
+    #camera-view, #photo-output {
+      width: 100%; max-width: 480px; aspect-ratio: 3/4;
+      object-fit: cover; background: #000
     }
 
-    /* translucent MENU button */
-    #menu-btn{
-      position:absolute;top:12px;right:12px;width:44px;height:44px;
-      border-radius:50%;background:rgba(255,255,255,.15);
-      display:flex;align-items:center;justify-content:center;
-      font-size:26px;color:#fff;cursor:pointer;z-index:20;
-      backdrop-filter:blur(6px)
+    #menu-btn {
+      position: absolute; top: 12px; right: 12px; width: 44px; height: 44px;
+      border-radius: 50%; background: rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; color: #fff; cursor: pointer; z-index: 20;
+      backdrop-filter: blur(6px)
     }
 
-    /* translucent SHUTTER button */
-    #shutter{
-      position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
-      width:70px;height:70px;border-radius:50%;border:3px solid #fff;
-      background:rgba(255,255,255,.2);cursor:pointer;z-index:10;
-      backdrop-filter:blur(6px);font-size:0
+    #shutter {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fff;
+      background: rgba(255,255,255,.2); cursor: pointer; z-index: 10;
+      backdrop-filter: blur(6px); font-size: 0
     }
-    #shutter:disabled{opacity:.4;cursor:default}
+    #shutter:disabled { opacity: .4; cursor: default }
 
-    canvas{display:none}
+    canvas { display: none }
 
-    /* control panel */
-    #controls{
-      position:absolute;left:50%;bottom:20px;transform:translate(-50%,100%);
-      width:calc(100% - 24px);max-width:480px;
-      background:rgba(0,0,0,.85);padding:14px;border-radius:14px;
-      display:flex;flex-direction:column;gap:10px;z-index:15;
-      backdrop-filter:blur(8px);
-      transition:transform .3s ease-out,opacity .3s ease-out;
-      opacity:0;pointer-events:none;
+    #controls {
+      position: absolute; left: 50%; bottom: 20px; transform: translate(-50%,100%);
+      width: calc(100% - 24px); max-width: 480px;
+      background: rgba(0,0,0,.85); padding: 14px; border-radius: 14px;
+      display: flex; flex-direction: column; gap: 10px; z-index: 15;
+      backdrop-filter: blur(8px);
+      transition: transform .3s ease-out, opacity .3s ease-out;
+      opacity: 0; pointer-events: none;
     }
-    #controls.show{
-      transform:translate(-50%,0);
-      opacity:1;pointer-events:auto;
+    #controls.show {
+      transform: translate(-50%,0);
+      opacity: 1; pointer-events: auto;
     }
 
-    label{width:100%;font-size:14px}
-    input[type=range],select{width:100%}
-    small{font-size:12px;opacity:.7;text-align:center}
+    label { width: 100%; font-size: 14px }
+    input[type=range], select { width: 100% }
+    small { font-size: 12px; opacity: .7; text-align: center }
+
+    #colorMixPanel {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(0,0,0,0.8);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .color-palette {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .color-dot {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 2px solid white;
+      cursor: pointer;
+      opacity: 0.6;
+    }
+    .color-dot.active {
+      opacity: 1;
+      border-color: lime;
+    }
   </style>
 </head>
 <body>
 
-  <!-- live preview & captured image -->
   <video id="camera-view" autoplay playsinline></video>
-  <img   id="photo-output" style="display:none">
+  <img id="photo-output" style="display:none">
 
-  <!-- overlay UI -->
   <div id="menu-btn">☰</div>
   <button id="shutter" disabled aria-label="Take photo"></button>
 
-  <!-- hidden drawing surface -->
   <canvas id="canvas"></canvas>
 
-  <!-- slide-in controls -->
   <div id="controls">
     <label>Simulated ISO (<span id="iso-val">200</span>)
       <input type="range" id="iso"  min="50" max="400" step="50" value="200">
@@ -87,6 +106,7 @@
         <option value="cool">Cool</option>
         <option value="highContrast">High Contrast</option>
         <option value="vintage">Vintage</option>
+        <option value="colorMix">Color Mix (HSL)</option>
       </select>
     </label>
 
@@ -94,11 +114,17 @@
       <input type="range" id="grain" min="0" max="50" step="5" value="0">
     </label>
 
-    <small>Game-pad: D-pad ↑/↓ = ISO  |  A = shutter</small>
+    <div id="colorMixPanel">
+      <div class="color-palette" id="palette"></div>
+      <label>Hue <input type="range" id="hueSlider" min="-100" max="100" value="0"></label>
+      <label>Saturation <input type="range" id="satSlider" min="-100" max="100" value="0"></label>
+      <label>Luminance <input type="range" id="lumSlider" min="-100" max="100" value="0"></label>
+    </div>
+
+    <small>Game-pad: D-pad ↑/↓ = ISO | A = shutter</small>
   </div>
 
 <script>
-/* element refs */
 const video   = document.getElementById('camera-view');
 const canvas  = document.getElementById('canvas');
 const photo   = document.getElementById('photo-output');
@@ -111,78 +137,165 @@ const shutter = document.getElementById('shutter');
 const panel   = document.getElementById('controls');
 const menuBtn = document.getElementById('menu-btn');
 
+const colorMixPanel = document.getElementById('colorMixPanel');
+const hueSlider = document.getElementById('hueSlider');
+const satSlider = document.getElementById('satSlider');
+const lumSlider = document.getElementById('lumSlider');
+const palette = document.getElementById('palette');
+
 /* state */
-let iso=+isoRng.value, grain=+grainR.value;
-let padIdx=null, lastPad=0;
+let iso = +isoRng.value, grain = +grainR.value;
+let padIdx = null, lastPad = 0;
+let activeHue = 0;
+const hues = [0, 30, 60, 120, 180, 240, 270, 300];
+const hueNames = ["Red", "Orange", "Yellow", "Green", "Aqua", "Blue", "Purple", "Magenta"];
+const colorAdjustments = {};
+hues.forEach(h => colorAdjustments[h] = { hue: 0, sat: 0, lum: 0 });
+
+hues.forEach((h, i) => {
+  const dot = document.createElement('div');
+  dot.className = 'color-dot';
+  dot.style.background = `hsl(${h}, 100%, 50%)`;
+  dot.dataset.hue = h;
+  if (i === 0) dot.classList.add('active');
+  palette.appendChild(dot);
+  dot.onclick = () => {
+    document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('active'));
+    dot.classList.add('active');
+    activeHue = parseInt(dot.dataset.hue);
+    hueSlider.value = colorAdjustments[activeHue].hue;
+    satSlider.value = colorAdjustments[activeHue].sat;
+    lumSlider.value = colorAdjustments[activeHue].lum;
+  };
+});
+
+[hueSlider, satSlider, lumSlider].forEach(slider => {
+  slider.addEventListener('input', () => {
+    colorAdjustments[activeHue].hue = +hueSlider.value;
+    colorAdjustments[activeHue].sat = +satSlider.value;
+    colorAdjustments[activeHue].lum = +lumSlider.value;
+  });
+});
 
 /* ---- camera ---- */
-(async ()=>{
-  try{
-    const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
-    video.srcObject=s;
-    video.onloadedmetadata=()=>shutter.disabled=false;
-  }catch(e){alert('Camera error: '+e.message);}
+(async () => {
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = s;
+    video.onloadedmetadata = () => shutter.disabled = false;
+  } catch (e) { alert('Camera error: ' + e.message); }
 })();
 
 /* ---- UI ---- */
-isoRng.oninput  =()=>{iso=+isoRng.value; isoLbl.textContent=iso};
-grainR.oninput  =()=>{grain=+grainR.value; grainLbl.textContent=grain};
-menuBtn.onclick =()=>panel.classList.toggle('show');
+isoRng.oninput = () => { iso = +isoRng.value; isoLbl.textContent = iso };
+grainR.oninput = () => { grain = +grainR.value; grainLbl.textContent = grain };
+menuBtn.onclick = () => panel.classList.toggle('show');
+filter.onchange = () => {
+  colorMixPanel.style.display = (filter.value === 'colorMix') ? 'flex' : 'none';
+};
 shutter.onclick = snap;
 
 /* ---- snapshot ---- */
-function snap(){
-  const w=video.videoWidth, h=video.videoHeight;
-  if(!w||!h){alert('Camera not ready'); return;}
+function snap() {
+  const w = video.videoWidth, h = video.videoHeight;
+  if (!w || !h) return alert('Camera not ready');
 
-  canvas.width=w; canvas.height=h;
-  const ctx=canvas.getContext('2d');
-  ctx.drawImage(video,0,0,w,h);
-  const img=ctx.getImageData(0,0,w,h),d=img.data;
-  const bright=iso/200;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, w, h);
+  const img = ctx.getImageData(0, 0, w, h), d = img.data;
+  const bright = iso / 200;
 
-  for(let i=0;i<d.length;i+=4){
-    let r=d[i]*bright, g=d[i+1]*bright, b=d[i+2]*bright;
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i] * bright, g = d[i + 1] * bright, b = d[i + 2] * bright;
 
-    switch(filter.value){
-      case 'monochrome':{const avg=(r+g+b)/3; r=g=b=avg; break;}
-      case 'warm':  r+=20; b-=10; break;
-      case 'cool':  r-=10; b+=20; break;
-      case 'highContrast':{const c=1.5; r=((r-128)*c)+128; g=((g-128)*c)+128; b=((b-128)*c)+128; break;}
-      case 'vintage': r=r*1.1+10; g=g*0.9; b=b*0.8; break;
+    switch (filter.value) {
+      case 'monochrome': r = g = b = (r + g + b) / 3; break;
+      case 'warm': r += 20; b -= 10; break;
+      case 'cool': r -= 10; b += 20; break;
+      case 'highContrast': [r, g, b] = [(r - 128) * 1.5 + 128, (g - 128) * 1.5 + 128, (b - 128) * 1.5 + 128]; break;
+      case 'vintage': r = r * 1.1 + 10; g *= 0.9; b *= 0.8; break;
+      case 'colorMix': {
+        const [h, s, l] = rgbToHsl(r, g, b);
+        for (const hue in colorAdjustments) {
+          const adj = colorAdjustments[hue];
+          const diff = Math.min(Math.abs(h - hue), 360 - Math.abs(h - hue));
+          if (diff < 20) {
+            let newH = (h + adj.hue + 360) % 360;
+            let newS = Math.min(Math.max(s + adj.sat / 100, 0), 1);
+            let newL = Math.min(Math.max(l + adj.lum / 100, 0), 1);
+            [r, g, b] = hslToRgb(newH, newS, newL);
+          }
+        }
+      } break;
     }
 
-    if(grain){
-      const n=(Math.random()-0.5)*2*grain;
-      r+=n; g+=n; b+=n;
+    if (grain) {
+      const n = (Math.random() - 0.5) * 2 * grain;
+      r += n; g += n; b += n;
     }
 
-    d[i]  =Math.max(0,Math.min(255,r));
-    d[i+1]=Math.max(0,Math.min(255,g));
-    d[i+2]=Math.max(0,Math.min(255,b));
+    d[i] = Math.max(0, Math.min(255, r));
+    d[i + 1] = Math.max(0, Math.min(255, g));
+    d[i + 2] = Math.max(0, Math.min(255, b));
   }
-  ctx.putImageData(img,0,0);
-  photo.src=canvas.toDataURL('image/png');
-  photo.style.display='block';
-  video.style.display='none';
+
+  ctx.putImageData(img, 0, 0);
+  photo.src = canvas.toDataURL('image/png');
+  photo.style.display = 'block';
+  video.style.display = 'none';
 }
 
-/* ---- game-pad ---- */
-window.addEventListener('gamepadconnected',e=>padIdx=e.gamepad.index);
-window.addEventListener('gamepaddisconnected',()=>padIdx=null);
-(function poll(){
-  if(padIdx!==null){
-    const gp=navigator.getGamepads()[padIdx];
-    if(gp){
-      const t=performance.now();
-      if(gp.buttons[12].pressed && t-lastPad>250){
-        iso=Math.min(400,iso+50); isoRng.value=isoLbl.textContent=iso; lastPad=t;
+/* ---- helpers ---- */
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s, l = (max + min) / 2;
+  if (max === min) h = s = 0;
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+    else if (max === g) h = ((b - r) / d + 2) * 60;
+    else if (max === b) h = ((r - g) / d + 4) * 60;
+  }
+  return [h, s, l];
+}
+function hslToRgb(h, s, l) {
+  h /= 360;
+  let r, g, b;
+  const hue2rgb = (p, q, t) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  r = hue2rgb(p, q, h + 1 / 3);
+  g = hue2rgb(p, q, h);
+  b = hue2rgb(p, q, h - 1 / 3);
+  return [r * 255, g * 255, b * 255];
+}
+
+/* ---- gamepad ---- */
+window.addEventListener('gamepadconnected', e => padIdx = e.gamepad.index);
+window.addEventListener('gamepaddisconnected', () => padIdx = null);
+(function poll() {
+  if (padIdx !== null) {
+    const gp = navigator.getGamepads()[padIdx];
+    if (gp) {
+      const t = performance.now();
+      if (gp.buttons[12].pressed && t - lastPad > 250) {
+        iso = Math.min(400, iso + 50); isoRng.value = isoLbl.textContent = iso; lastPad = t;
       }
-      if(gp.buttons[13].pressed && t-lastPad>250){
-        iso=Math.max(50,iso-50); isoRng.value=isoLbl.textContent=iso; lastPad=t;
+      if (gp.buttons[13].pressed && t - lastPad > 250) {
+        iso = Math.max(50, iso - 50); isoRng.value = isoLbl.textContent = iso; lastPad = t;
       }
-      if(gp.buttons[0].pressed && t-lastPad>300){
-        shutter.click(); lastPad=t;
+      if (gp.buttons[0].pressed && t - lastPad > 300) {
+        shutter.click(); lastPad = t;
       }
     }
   }
