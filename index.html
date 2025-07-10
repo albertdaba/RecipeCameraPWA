@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>High-Res Camera</title>
+  <title>High-Res Camera with Grain</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -25,47 +25,110 @@
       background: rgba(255, 255, 255, 0.1);
       cursor: pointer;
     }
+    #menu-btn {
+      position: absolute; top: 12px; right: 12px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,.2); color: white;
+      font-size: 26px; text-align: center; line-height: 44px;
+      backdrop-filter: blur(6px); cursor: pointer;
+    }
+    #controls {
+      position: absolute; bottom: 20px; left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      background: rgba(0,0,0,0.85); padding: 12px;
+      border-radius: 10px; transition: transform 0.3s ease, opacity 0.3s;
+      opacity: 0; pointer-events: none;
+      display: flex; flex-direction: column; gap: 10px;
+      width: calc(100% - 32px); max-width: 480px;
+    }
+    #controls.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1; pointer-events: auto;
+    }
+    input[type=range] { width: 100%; }
+    label { font-size: 14px; }
   </style>
 </head>
 <body>
 
 <video id="video" autoplay playsinline></video>
 <img id="photo" style="display:none">
-<button id="shutter"></button>
 <canvas id="canvas" style="display:none"></canvas>
 
-<script>
-  const video = document.getElementById('video');
-  const photo = document.getElementById('photo');
-  const canvas = document.getElementById('canvas');
-  const shutter = document.getElementById('shutter');
+<div id="menu-btn">☰</div>
+<button id="shutter"></button>
 
-  async function startCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { exact: "environment" }, // Rear camera
-        width: { ideal: 4096 },
-        height: { ideal: 2160 }
-      }
-    });
-    video.srcObject = stream;
-    await video.play();
+<div id="controls">
+  <label>Film Grain (<span id="grain-val">15</span>)</label>
+  <input type="range" id="grain" min="0" max="50" value="15">
+</div>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const photo = document.getElementById('photo');
+const shutter = document.getElementById('shutter');
+const menuBtn = document.getElementById('menu-btn');
+const controls = document.getElementById('controls');
+const grainSlider = document.getElementById('grain');
+const grainVal = document.getElementById('grain-val');
+
+let grainAmount = +grainSlider.value;
+
+grainSlider.oninput = () => {
+  grainAmount = +grainSlider.value;
+  grainVal.textContent = grainAmount;
+};
+
+menuBtn.onclick = () => {
+  controls.classList.toggle('show');
+};
+
+async function startCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: { exact: "environment" },
+      width: { ideal: 4096 },
+      height: { ideal: 2160 }
+    }
+  });
+  video.srcObject = stream;
+  await video.play();
+}
+
+shutter.onclick = () => {
+  const w = video.videoWidth;
+  const h = video.videoHeight;
+  canvas.width = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, w, h);
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+
+  // Apply film grain
+  if (grainAmount > 0) {
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 2 * grainAmount;
+      data[i] += noise;     // R
+      data[i + 1] += noise; // G
+      data[i + 2] += noise; // B
+    }
+    ctx.putImageData(imgData, 0, 0);
   }
 
-  shutter.onclick = () => {
-    const w = video.videoWidth;
-    const h = video.videoHeight;
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, w, h);
-    const dataURL = canvas.toDataURL('image/jpeg', 1.0);
-    photo.src = dataURL;
-    photo.style.display = 'block';
-    video.style.display = 'none';
-  };
+  // Output photo
+  const dataURL = canvas.toDataURL("image/jpeg", 1.0);
+  photo.src = dataURL;
+  photo.style.display = 'block';
+  video.style.display = 'none';
 
-  startCamera().catch(e => alert('Camera Error: ' + e.message));
+  // For iOS: tapping and holding the image lets user "Add to Photos"
+};
+
+startCamera().catch(e => alert('Camera Error: ' + e.message));
 </script>
 
 </body>
