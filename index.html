@@ -303,13 +303,7 @@ window.addEventListener('gamepaddisconnected', () => padIdx = null);
 
 let livePreviewRunning = false;
 
-function drawLivePreview() {
-  if (!panel.classList.contains('show') || filter.value !== 'colorMix') {
-    canvas.style.display = 'none';
-    livePreviewRunning = false;
-    return;
-  }
-
+function renderColorMixPreview() {
   const w = video.videoWidth, h = video.videoHeight;
   if (!w || !h) return;
 
@@ -325,45 +319,57 @@ function drawLivePreview() {
   for (let i = 0; i < d.length; i += 4) {
     let r = d[i], g = d[i+1], b = d[i+2];
     const [h, s, l] = rgbToHsl(r, g, b);
-
     let newH = h, newS = s, newL = l;
+
     for (const hueKey in colorAdjustments) {
       const adj = colorAdjustments[hueKey];
       const diff = Math.min(Math.abs(h - hueKey), 360 - Math.abs(h - hueKey));
-      const weight = Math.max(0, 1 - (diff / 20));  // soft blend within ±20° window
-      if (weight > 0) {
+      const weight = Math.exp(-Math.pow(diff, 2) / (2 * 15 * 15)); // Gaussian
+      if (weight > 0.01) {
         newH += adj.hue * weight;
         newS += (adj.sat / 100) * weight;
         newL += (adj.lum / 100) * weight;
       }
     }
 
-    [r, g, b] = hslToRgb(newH % 360, Math.min(1, Math.max(0, newS)), Math.min(1, Math.max(0, newL)));
-    d[i] = r; d[i+1] = g; d[i+2] = b;
+    [r, g, b] = hslToRgb(
+      newH % 360,
+      Math.min(1, Math.max(0, newS)),
+      Math.min(1, Math.max(0, newL))
+    );
+
+    d[i] = r;
+    d[i+1] = g;
+    d[i+2] = b;
   }
 
   ctx.putImageData(img, 0, 0);
-  requestAnimationFrame(drawLivePreview);
 }
 
-filter.addEventListener('change', () => {
-  colorMixPanel.style.display = (filter.value === 'colorMix') ? 'flex' : 'none';
-  if (panel.classList.contains('show') && filter.value === 'colorMix' && !livePreviewRunning) {
-    livePreviewRunning = true;
-    drawLivePreview();
-  }
-});
+// ✨ Replaced live preview with one-time snapshot on menu open
 menuBtn.addEventListener('click', () => {
   panel.classList.toggle('show');
-  if (panel.classList.contains('show') && filter.value === 'colorMix' && !livePreviewRunning) {
-    livePreviewRunning = true;
-    drawLivePreview();
+
+  if (panel.classList.contains('show')) {
+    if (filter.value === 'colorMix') {
+      renderColorMixPreview();
+    } else {
+      canvas.style.display = 'none';
+    }
   } else {
     canvas.style.display = 'none';
-    livePreviewRunning = false;
   }
 });
 
+// ✨ Updated filter change to enable preview on filter switch
+filter.addEventListener('change', () => {
+  colorMixPanel.style.display = (filter.value === 'colorMix') ? 'flex' : 'none';
+  if (panel.classList.contains('show') && filter.value === 'colorMix') {
+    renderColorMixPreview();
+  } else {
+    canvas.style.display = 'none';
+  }
+});
 </script>
 </body>
 </html>
