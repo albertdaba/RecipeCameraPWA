@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Monochrome Camera PWA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <link rel="icon" href="data:,"> <!-- Prevent favicon 404 -->
+  <link rel="icon" href="data:,"><!-- avoid favicon 404 -->
   <style>
+    :root { color-scheme: dark; }
     body {
       margin: 0;
       background: #000;
@@ -14,96 +15,190 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
-      color: white;
       font-family: sans-serif;
+      color: #fff;
+      overflow: hidden;
     }
-
     #camera-view, #photo-output {
       width: 100%;
       max-width: 480px;
       aspect-ratio: 3/4;
-      background: black;
+      background: #000;
       object-fit: cover;
     }
-
+    #controls {                       /* wraps sliders & buttons */
+      width: 100%;
+      max-width: 480px;
+      padding: 10px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    input[type="range"], select {
+      width: 100%;
+    }
     #shutter {
-      margin-top: 10px;
       padding: 15px 30px;
       font-size: 18px;
       border: none;
-      border-radius: 10px;
-      background-color: #ffffff;
-      color: #000000;
-      cursor: pointer;
+      border-radius: 12px;
+      background:#fff;
+      color:#000;
+      cursor:pointer;
     }
-
-    canvas {
-      display: none;
-    }
+    canvas { display: none; }
+    small { font-size: 12px; opacity: .7; }
   </style>
 </head>
 <body>
 
   <video id="camera-view" autoplay playsinline></video>
-  <img id="photo-output" style="display: none;" />
+  <img   id="photo-output" style="display:none">
   <canvas id="canvas"></canvas>
-  <button id="shutter">📸 Take Photo</button>
+
+  <div id="controls">
+    <label>
+      Simulated ISO: <span id="iso-value">200</span>
+      <input type="range" id="iso-slider" min="50" max="400" step="50" value="200">
+    </label>
+
+    <label>
+      Filter:
+      <select id="filter">
+        <option value="none">None</option>
+        <option value="warm">Warm</option>
+        <option value="cool">Cool</option>
+        <option value="highContrast">High Contrast</option>
+        <option value="vintage">Vintage</option>
+      </select>
+    </label>
+
+    <button id="shutter" disabled>📸 Take Photo (A button)</button>
+    <small>D-pad ↑/↓ changes ISO</small>
+  </div>
 
   <script>
-    const video = document.getElementById('camera-view');
-    const canvas = document.getElementById('canvas');
-    const photo = document.getElementById('photo-output');
-    const button = document.getElementById('shutter');
+  /* ---------- element references ---------- */
+  const video   = document.getElementById('camera-view');
+  const canvas  = document.getElementById('canvas');
+  const photo   = document.getElementById('photo-output');
+  const shutter = document.getElementById('shutter');
+  const isoSlider = document.getElementById('iso-slider');
+  const isoLabel  = document.getElementById('iso-value');
+  const filterSel = document.getElementById('filter');
 
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' },
-          audio: false
-        });
-        video.srcObject = stream;
-      } catch (err) {
-        alert("Unable to access camera: " + err.message);
+  /* ---------- state ---------- */
+  let simulatedISO = +isoSlider.value;          // numeric
+  let gamepadIndex = null;
+  let lastPadTime  = 0;
+
+  /* ---------- camera ---------- */
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:'environment' }, audio:false
+      });
+      video.srcObject = stream;
+    } catch (e) {
+      alert('Camera error: '+e.message);
+    }
+  }
+
+  /* wait until video sizes are known */
+  video.addEventListener('loadedmetadata', () => {
+    shutter.disabled = false;
+  });
+
+  /* ---------- ISO slider ---------- */
+  isoSlider.addEventListener('input', () => {
+    simulatedISO = +isoSlider.value;
+    isoLabel.textContent = simulatedISO;
+  });
+
+  /* ---------- shutter click ---------- */
+  shutter.addEventListener('click', takePhoto);
+
+  function takePhoto() {
+    const w = video.videoWidth, h = video.videoHeight;
+    if (!w || !h) { alert('Camera not ready'); return; }
+
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+
+    const img = ctx.getImageData(0, 0, w, h);
+    const d = img.data;
+    const brightFactor = simulatedISO / 200; // 200 neutral
+
+    const mode = filterSel.value;
+
+    for (let i=0;i<d.length;i+=4){
+      /* grayscale base */
+      let avg = (d[i]+d[i+1]+d[i+2])/3 * brightFactor;
+      avg = Math.min(255, avg);
+
+      let r = avg, g = avg, b = avg;
+
+      /* optional filter tweaks */
+      switch(mode){
+        case 'warm': r+=20; b-=10; break;
+        case 'cool': r-=10; b+=20; break;
+        case 'highContrast':
+          const c=1.5; r=((r-128)*c)+128; g=((g-128)*c)+128; b=((b-128)*c)+128; break;
+        case 'vintage': r=r*1.1+10; g=g*0.9; b=b*0.8; break;
       }
+
+      d[i]=r; d[i+1]=g; d[i+2]=b;
+    }
+    ctx.putImageData(img,0,0);
+
+    photo.src = canvas.toDataURL('image/png');
+    photo.style.display='block';
+    video.style.display='none';
+  }
+
+  /* ---------- gamepad support ---------- */
+  window.addEventListener('gamepadconnected', e=>{
+    gamepadIndex = e.gamepad.index;
+    console.log('🕹️ Gamepad connected:', e.gamepad.id);
+  });
+  window.addEventListener('gamepaddisconnected', ()=>{
+    gamepadIndex=null; console.log('🕹️ Gamepad disconnected');
+  });
+
+  function pollPad(){
+    if(gamepadIndex===null){ requestAnimationFrame(pollPad); return; }
+    const gp = navigator.getGamepads()[gamepadIndex];
+    if(!gp){ requestAnimationFrame(pollPad); return; }
+
+    const now = performance.now();
+
+    /* D-pad up/down → ISO */
+    if(gp.buttons[12].pressed && now-lastPadTime>250){
+      simulatedISO = Math.min(400, simulatedISO+50);
+      isoSlider.value = isoLabel.textContent = simulatedISO;
+      lastPadTime = now;
+    }
+    if(gp.buttons[13].pressed && now-lastPadTime>250){
+      simulatedISO = Math.max(50, simulatedISO-50);
+      isoSlider.value = isoLabel.textContent = simulatedISO;
+      lastPadTime = now;
     }
 
-    // Ensure video dimensions are ready before capturing
-    video.addEventListener('loadedmetadata', () => {
-      button.disabled = false; // enable only after ready
-    });
+    /* A button → shutter */
+    if(gp.buttons[0].pressed && now-lastPadTime>300){
+      shutter.click();
+      lastPadTime = now;
+    }
 
-    button.addEventListener('click', () => {
-      const width = video.videoWidth;
-      const height = video.videoHeight;
+    requestAnimationFrame(pollPad);
+  }
+  requestAnimationFrame(pollPad);
 
-      if (!width || !height) {
-        alert("Camera not ready yet.");
-        return;
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, width, height);
-
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const data = imgData.data;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        data[i] = data[i + 1] = data[i + 2] = avg; // convert to grayscale
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-
-      photo.src = canvas.toDataURL("image/png");
-      photo.style.display = "block";
-      video.style.display = "none";
-    });
-
-    // Start on load
-    startCamera();
+  /* ---------- kick things off ---------- */
+  startCamera();
   </script>
 </body>
 </html>
