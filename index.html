@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Camera PWA – Film with White Border</title>
+  <title>Camera Switch & Film Sim</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -11,11 +11,8 @@
       height: 100vh; overflow: hidden;
     }
     video, img {
-      width: 100%;
-      max-width: 480px;
-      aspect-ratio: 3/4;
-      object-fit: contain;
-      background: black;
+      width: 100%; max-width: 480px;
+      aspect-ratio: 3/4; object-fit: contain; background: black;
     }
     #shutter {
       position: absolute; bottom: 20px; left: 50%;
@@ -39,8 +36,17 @@
       border: 1px solid #fff;
       border-radius: 6px;
       cursor: pointer;
-      display: none;
-      z-index: 12;
+      display: none; z-index: 12;
+    }
+    #switch-btn {
+      position: absolute; top: 12px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.15);
+      border: 1px solid #fff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 14px;
+      cursor: pointer; z-index: 12;
     }
     #controls {
       position: absolute; bottom: 20px; left: 50%;
@@ -68,6 +74,7 @@
 
 <div id="menu-btn">☰</div>
 <div id="next-btn">↩ Next</div>
+<div id="switch-btn">Switch Camera</div>
 <button id="shutter"></button>
 
 <div id="controls">
@@ -88,6 +95,7 @@ const photo = document.getElementById('photo');
 const shutter = document.getElementById('shutter');
 const menuBtn = document.getElementById('menu-btn');
 const nextBtn = document.getElementById('next-btn');
+const switchBtn = document.getElementById('switch-btn');
 const controls = document.getElementById('controls');
 const grainSlider = document.getElementById('grain');
 const grainVal = document.getElementById('grain-val');
@@ -95,6 +103,9 @@ const filmSelect = document.getElementById('film');
 
 let grainAmount = +grainSlider.value;
 let film = filmSelect.value;
+let devices = [];
+let currentCam = 0;
+let currentStream = null;
 
 grainSlider.oninput = () => {
   grainAmount = +grainSlider.value;
@@ -104,48 +115,52 @@ filmSelect.onchange = () => {
   film = filmSelect.value;
 };
 
-menuBtn.onclick = () => {
-  controls.classList.toggle('show');
-};
-
+menuBtn.onclick = () => controls.classList.toggle('show');
 nextBtn.onclick = () => {
   video.style.display = 'block';
   photo.style.display = 'none';
   nextBtn.style.display = 'none';
 };
 
-async function startCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({
+switchBtn.onclick = async () => {
+  currentCam = (currentCam + 1) % devices.length;
+  await startCamera(devices[currentCam].deviceId);
+};
+
+async function getRearCameras() {
+  const allDevices = await navigator.mediaDevices.enumerateDevices();
+  return allDevices.filter(d => d.kind === 'videoinput' && d.label.toLowerCase().includes('back'));
+}
+
+async function startCamera(deviceId) {
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+  }
+  const constraints = {
     video: {
-      facingMode: { exact: "environment" },
+      deviceId: { exact: deviceId },
       width: { ideal: 4096 },
       height: { ideal: 2160 }
     }
-  });
-  video.srcObject = stream;
+  };
+  currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+  video.srcObject = currentStream;
   await video.play();
 }
 
 shutter.onclick = () => {
   const w = video.videoWidth;
   const h = video.videoHeight;
-
-  // border size in pixels
-  const border = Math.floor(Math.min(w, h) * 0.05);  // 5% of the shorter dimension
-
+  const border = Math.floor(Math.min(w, h) * 0.05);
   const finalW = w + border * 2;
   const finalH = h + border * 2;
 
   canvas.width = finalW;
   canvas.height = finalH;
-
   const ctx = canvas.getContext('2d');
 
-  // draw white border
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, finalW, finalH);
-
-  // draw the actual image in center
   ctx.drawImage(video, border, border, w, h);
 
   const imgData = ctx.getImageData(border, border, w, h);
@@ -153,7 +168,6 @@ shutter.onclick = () => {
 
   for (let i = 0; i < d.length; i += 4) {
     let r = d[i], g = d[i + 1], b = d[i + 2];
-
     if (film === "acros") {
       const avg = (r + g + b) / 3;
       r = g = b = avg;
@@ -163,17 +177,14 @@ shutter.onclick = () => {
       g = g * 0.85 + avg * 0.15;
       b = b * 0.85 + avg * 0.15;
     }
-
     if (grainAmount > 0) {
       const n = (Math.random() - 0.5) * 2 * grainAmount;
       r += n; g += n; b += n;
     }
-
     d[i] = Math.max(0, Math.min(255, r));
     d[i + 1] = Math.max(0, Math.min(255, g));
     d[i + 2] = Math.max(0, Math.min(255, b));
   }
-
   ctx.putImageData(imgData, border, border);
 
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
@@ -182,9 +193,15 @@ shutter.onclick = () => {
   nextBtn.style.display = 'block';
 };
 
-startCamera().catch(e => alert('Camera Error: ' + e.message));
+(async () => {
+  devices = await getRearCameras();
+  if (devices.length === 0) {
+    alert('No rear cameras found.');
+  } else {
+    await startCamera(devices[currentCam].deviceId);
+  }
+})();
 </script>
 
 </body>
 </html>
-
