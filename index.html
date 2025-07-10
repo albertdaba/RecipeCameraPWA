@@ -2,158 +2,107 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Camera PWA with ACES Grading</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+  <title>Camera PWA – Lens Switch & Save Full Quality</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
-    :root { color-scheme: dark }
-    * { box-sizing: border-box }
-    body {
-      margin: 0; background: #000; height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      font-family: sans-serif; color: #fff; overflow: hidden
-    }
+    body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
     #camera-view, #photo-output {
-      width: 100%; max-width: 480px; aspect-ratio: 3/4;
-      object-fit: cover; background: #000
+      width: 100%; height: auto; aspect-ratio: 3/4;
+      object-fit: cover; background: #000;
     }
-    #menu-btn, #lens-btn {
-      position: absolute; top: 12px; width: 44px; height: 44px;
-      border-radius: 50%; background: rgba(255,255,255,.15);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; color: #fff; cursor: pointer; z-index: 20;
-      backdrop-filter: blur(6px)
+    #shutter, #switchCameraBtn, #saveBtn {
+      position: absolute; bottom: 20px; background: rgba(255,255,255,0.2);
+      border: 2px solid white; color: white; border-radius: 8px; cursor: pointer;
+      padding: 10px; z-index: 10; backdrop-filter: blur(5px);
     }
-    #menu-btn { right: 12px; }
-    #lens-btn { left: 12px; }
-    #shutter {
-      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-      width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fff;
-      background: rgba(255,255,255,.2); cursor: pointer; z-index: 10;
-      backdrop-filter: blur(6px); font-size: 0
-    }
-    #shutter:disabled { opacity: .4; cursor: default }
-    canvas { display: none }
-    #controls {
-      position: absolute; left: 50%; bottom: 20px; transform: translate(-50%,100%);
-      width: calc(100% - 24px); max-width: 480px;
-      background: rgba(0,0,0,.85); padding: 14px; border-radius: 14px;
-      display: flex; flex-direction: column; gap: 10px; z-index: 15;
-      backdrop-filter: blur(8px);
-      transition: transform .3s ease-out, opacity .3s ease-out;
-      opacity: 0; pointer-events: none;
-    }
-    #controls.show {
-      transform: translate(-50%,0);
-      opacity: 1; pointer-events: auto;
-    }
-    label { width: 100%; font-size: 14px }
-    input[type=range], select { width: 100% }
-    small { font-size: 12px; opacity: .7; text-align: center }
+    #shutter { left: 50%; transform: translateX(-50%); }
+    #switchCameraBtn { left: 20px; }
+    #saveBtn { right: 20px; display: none; }
+    canvas { display: none; }
   </style>
 </head>
 <body>
+  <video id="camera-view" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <img id="photo-output" style="display:none"/>
 
-<video id="camera-view" autoplay playsinline></video>
-<img id="photo-output" style="display:none">
-<div id="menu-btn">☰</div>
-<div id="lens-btn">🔄</div>
-<button id="shutter" disabled aria-label="Take photo"></button>
-<canvas id="canvas"></canvas>
-<div id="controls">
-  <label>Exposure Compensation (<span id="exp-val">0</span>)
-    <input type="range" id="exposure" min="-2" max="2" step="0.1" value="0">
-  </label>
-  <label>Film Simulation
-    <select id="film">
-      <option value="kodachrome">Kodachrome</option>
-      <option value="acros">Acros</option>
-    </select>
-  </label>
-  <label>Film Grain (<span id="grain-val">15</span>)
-    <input type="range" id="grain" min="0" max="50" step="1" value="15">
-  </label>
-  <small>Game-pad: D-pad ↑/↓ = ISO | A = shutter</small>
-</div>
+  <button id="shutter">📸</button>
+  <button id="switchCameraBtn">🔄</button>
+  <button id="saveBtn">💾 Save</button>
 
 <script>
 const video = document.getElementById('camera-view');
 const canvas = document.getElementById('canvas');
-const photo = document.getElementById('photo-output');
 const shutter = document.getElementById('shutter');
-const panel = document.getElementById('controls');
-const menuBtn = document.getElementById('menu-btn');
-const lensBtn = document.getElementById('lens-btn');
-const exposureSlider = document.getElementById('exposure');
-const exposureVal = document.getElementById('exp-val');
-const filmSelect = document.getElementById('film');
-const grainSlider = document.getElementById('grain');
-const grainVal = document.getElementById('grain-val');
+const photo = document.getElementById('photo-output');
+const switchBtn = document.getElementById('switchCameraBtn');
+const saveBtn = document.getElementById('saveBtn');
 
-let devices = [], currentDeviceIndex = 0, stream;
-let exposure = 0, grain = 15;
+let currentStream = null;
+let currentDeviceIndex = 0;
+let videoDevices = [];
 
-async function initCamera() {
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  const deviceId = devices[currentDeviceIndex]?.deviceId;
-  stream = await navigator.mediaDevices.getUserMedia({
+async function listVideoDevices() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  videoDevices = devices.filter(d => d.kind === 'videoinput');
+}
+
+async function startCamera(deviceId = null) {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+  }
+
+  const constraints = {
     video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' },
     audio: false
-  });
-  video.srcObject = stream;
-  shutter.disabled = false;
+  };
+
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = currentStream;
+  } catch (e) {
+    alert('Camera error: ' + e.message);
+  }
 }
 
-navigator.mediaDevices.enumerateDevices().then(all => {
-  devices = all.filter(d => d.kind === 'videoinput');
-  initCamera();
+switchBtn.addEventListener('click', async () => {
+  if (!videoDevices.length) await listVideoDevices();
+  currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+  const nextDeviceId = videoDevices[currentDeviceIndex].deviceId;
+  await startCamera(nextDeviceId);
 });
 
-lensBtn.onclick = () => {
-  currentDeviceIndex = (currentDeviceIndex + 1) % devices.length;
-  initCamera();
-};
-
-menuBtn.onclick = () => panel.classList.toggle('show');
-exposureSlider.oninput = () => { exposure = +exposureSlider.value; exposureVal.textContent = exposure };
-grainSlider.oninput = () => { grain = +grainSlider.value; grainVal.textContent = grain };
-
-shutter.onclick = () => {
+shutter.addEventListener('click', () => {
   const w = video.videoWidth, h = video.videoHeight;
-  canvas.width = w; canvas.height = h;
+  if (!w || !h) return alert('Camera not ready');
+
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, w, h);
-  const img = ctx.getImageData(0, 0, w, h);
-  const d = img.data;
-  for (let i = 0; i < d.length; i += 4) {
-    let r = d[i] / 255, g = d[i+1] / 255, b = d[i+2] / 255;
-    // Apply exposure
-    r *= Math.pow(2, exposure);
-    g *= Math.pow(2, exposure);
-    b *= Math.pow(2, exposure);
-    // Apply ACES tonemap
-    r = acesTonemap(r); g = acesTonemap(g); b = acesTonemap(b);
-    // Film simulation
-    if (filmSelect.value === 'acros') {
-      let mono = 0.299 * r + 0.587 * g + 0.114 * b;
-      r = g = b = mono;
-    }
-    // Apply grain
-    const noise = (Math.random() - 0.5) * 2 * (grain / 100);
-    r += noise; g += noise; b += noise;
-    // Clamp and write
-    d[i] = Math.max(0, Math.min(255, r * 255));
-    d[i+1] = Math.max(0, Math.min(255, g * 255));
-    d[i+2] = Math.max(0, Math.min(255, b * 255));
-  }
-  ctx.putImageData(img, 0, 0);
-  photo.src = canvas.toDataURL('image/png');
+
+  const dataURL = canvas.toDataURL('image/png');
+  photo.src = dataURL;
   photo.style.display = 'block';
   video.style.display = 'none';
-};
+  saveBtn.style.display = 'inline';
+});
 
-function acesTonemap(x) {
-  return (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14);
-}
+saveBtn.addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.download = `photo_${timestamp}.png`;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+  }, 'image/png', 1.0);
+});
+
+// Init
+(async () => {
+  await listVideoDevices();
+  await startCamera();
+})();
 </script>
 </body>
 </html>
