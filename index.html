@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Camera PWA – Acros & Kodachrome</title>
+  <title>Camera PWA – Film with White Border</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -14,7 +14,7 @@
       width: 100%;
       max-width: 480px;
       aspect-ratio: 3/4;
-      object-fit: cover;
+      object-fit: contain;
       background: black;
     }
     #shutter {
@@ -129,13 +129,26 @@ async function startCamera() {
 shutter.onclick = () => {
   const w = video.videoWidth;
   const h = video.videoHeight;
-  canvas.width = w;
-  canvas.height = h;
+
+  // border size in pixels
+  const border = Math.floor(Math.min(w, h) * 0.05);  // 5% of the shorter dimension
+
+  const finalW = w + border * 2;
+  const finalH = h + border * 2;
+
+  canvas.width = finalW;
+  canvas.height = finalH;
 
   const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, w, h);
 
-  const imgData = ctx.getImageData(0, 0, w, h);
+  // draw white border
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, finalW, finalH);
+
+  // draw the actual image in center
+  ctx.drawImage(video, border, border, w, h);
+
+  const imgData = ctx.getImageData(border, border, w, h);
   const d = imgData.data;
 
   for (let i = 0; i < d.length; i += 4) {
@@ -145,14 +158,12 @@ shutter.onclick = () => {
       const avg = (r + g + b) / 3;
       r = g = b = avg;
     } else if (film === "kodachrome") {
-      // simulate slight desaturation
       const avg = (r + g + b) / 3;
       r = r * 0.85 + avg * 0.15;
       g = g * 0.85 + avg * 0.15;
       b = b * 0.85 + avg * 0.15;
     }
 
-    // Apply grain
     if (grainAmount > 0) {
       const n = (Math.random() - 0.5) * 2 * grainAmount;
       r += n; g += n; b += n;
@@ -163,9 +174,8 @@ shutter.onclick = () => {
     d[i + 2] = Math.max(0, Math.min(255, b));
   }
 
-  ctx.putImageData(imgData, 0, 0);
+  ctx.putImageData(imgData, border, border);
 
-  // Display image
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
   photo.style.display = 'block';
   video.style.display = 'none';
@@ -177,3 +187,4 @@ startCamera().catch(e => alert('Camera Error: ' + e.message));
 
 </body>
 </html>
+
