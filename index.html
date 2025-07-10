@@ -189,7 +189,6 @@ hues.forEach((h, i) => {
 /* ---- UI ---- */
 isoRng.oninput = () => { iso = +isoRng.value; isoLbl.textContent = iso };
 grainR.oninput = () => { grain = +grainR.value; grainLbl.textContent = grain };
-menuBtn.onclick = () => panel.classList.toggle('show');
 filter.onchange = () => {
   colorMixPanel.style.display = (filter.value === 'colorMix') ? 'flex' : 'none';
 };
