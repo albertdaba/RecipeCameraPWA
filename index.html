@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monochrome Camera PWA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <link rel="icon" href="data:,"> <!-- Prevent favicon 404 -->
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+      font-family: sans-serif;
+    }
+
+    #camera-view, #photo-output {
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 3/4;
+      background: black;
+      object-fit: cover;
+    }
+
+    #shutter {
+      margin-top: 10px;
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background-color: #ffffff;
+      color: #000000;
+      cursor: pointer;
+    }
+
+    canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="camera-view" autoplay playsinline></video>
+  <img id="photo-output" style="display: none;" />
+  <canvas id="canvas"></canvas>
+  <button id="shutter">📸 Take Photo</button>
+
+  <script>
+    const video = document.getElementById('camera-view');
+    const canvas = document.getElementById('canvas');
+    const photo = document.getElementById('photo-output');
+    const button = document.getElementById('shutter');
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Unable to access camera: " + err.message);
+      }
+    }
+
+    // Ensure video dimensions are ready before capturing
+    video.addEventListener('loadedmetadata', () => {
+      button.disabled = false; // enable only after ready
+    });
+
+    button.addEventListener('click', () => {
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+
+      if (!width || !height) {
+        alert("Camera not ready yet.");
+        return;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, width, height);
+
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        data[i] = data[i + 1] = data[i + 2] = avg; // convert to grayscale
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+
+      photo.src = canvas.toDataURL("image/png");
+      photo.style.display = "block";
+      video.style.display = "none";
+    });
+
+    // Start on load
+    startCamera();
+  </script>
+</body>
+</html>
