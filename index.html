@@ -2,107 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Camera PWA – Lens Switch & Save Full Quality</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>High-Res Camera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
-    #camera-view, #photo-output {
-      width: 100%; height: auto; aspect-ratio: 3/4;
-      object-fit: cover; background: #000;
+    body {
+      margin: 0; background: #000; color: white; font-family: sans-serif;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100vh; overflow: hidden;
     }
-    #shutter, #switchCameraBtn, #saveBtn {
-      position: absolute; bottom: 20px; background: rgba(255,255,255,0.2);
-      border: 2px solid white; color: white; border-radius: 8px; cursor: pointer;
-      padding: 10px; z-index: 10; backdrop-filter: blur(5px);
+    video, img {
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      background: black;
     }
-    #shutter { left: 50%; transform: translateX(-50%); }
-    #switchCameraBtn { left: 20px; }
-    #saveBtn { right: 20px; display: none; }
-    canvas { display: none; }
+    #shutter {
+      margin-top: 10px;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      border: 4px solid white;
+      background: rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <video id="camera-view" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
-  <img id="photo-output" style="display:none"/>
 
-  <button id="shutter">📸</button>
-  <button id="switchCameraBtn">🔄</button>
-  <button id="saveBtn">💾 Save</button>
+<video id="video" autoplay playsinline></video>
+<img id="photo" style="display:none">
+<button id="shutter"></button>
+<canvas id="canvas" style="display:none"></canvas>
 
 <script>
-const video = document.getElementById('camera-view');
-const canvas = document.getElementById('canvas');
-const shutter = document.getElementById('shutter');
-const photo = document.getElementById('photo-output');
-const switchBtn = document.getElementById('switchCameraBtn');
-const saveBtn = document.getElementById('saveBtn');
+  const video = document.getElementById('video');
+  const photo = document.getElementById('photo');
+  const canvas = document.getElementById('canvas');
+  const shutter = document.getElementById('shutter');
 
-let currentStream = null;
-let currentDeviceIndex = 0;
-let videoDevices = [];
-
-async function listVideoDevices() {
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  videoDevices = devices.filter(d => d.kind === 'videoinput');
-}
-
-async function startCamera(deviceId = null) {
-  if (currentStream) {
-    currentStream.getTracks().forEach(track => track.stop());
+  async function startCamera() {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { exact: "environment" }, // Rear camera
+        width: { ideal: 4096 },
+        height: { ideal: 2160 }
+      }
+    });
+    video.srcObject = stream;
+    await video.play();
   }
 
-  const constraints = {
-    video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' },
-    audio: false
+  shutter.onclick = () => {
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+    const dataURL = canvas.toDataURL('image/jpeg', 1.0);
+    photo.src = dataURL;
+    photo.style.display = 'block';
+    video.style.display = 'none';
   };
 
-  try {
-    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = currentStream;
-  } catch (e) {
-    alert('Camera error: ' + e.message);
-  }
-}
-
-switchBtn.addEventListener('click', async () => {
-  if (!videoDevices.length) await listVideoDevices();
-  currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
-  const nextDeviceId = videoDevices[currentDeviceIndex].deviceId;
-  await startCamera(nextDeviceId);
-});
-
-shutter.addEventListener('click', () => {
-  const w = video.videoWidth, h = video.videoHeight;
-  if (!w || !h) return alert('Camera not ready');
-
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, w, h);
-
-  const dataURL = canvas.toDataURL('image/png');
-  photo.src = dataURL;
-  photo.style.display = 'block';
-  video.style.display = 'none';
-  saveBtn.style.display = 'inline';
-});
-
-saveBtn.addEventListener('click', () => {
-  canvas.toBlob(blob => {
-    const link = document.createElement('a');
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    link.download = `photo_${timestamp}.png`;
-    link.href = URL.createObjectURL(blob);
-    link.click();
-  }, 'image/png', 1.0);
-});
-
-// Init
-(async () => {
-  await listVideoDevices();
-  await startCamera();
-})();
+  startCamera().catch(e => alert('Camera Error: ' + e.message));
 </script>
+
 </body>
 </html>
