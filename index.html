@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+
   <meta charset="UTF-8">
   <title>Camera PWA – Film App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+  
   <style>
+
+
+
     body {
       margin: 0; background: #000; color: white; font-family: sans-serif;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -224,6 +234,12 @@ shutter.onclick = () => {
 };
 
 startCamera();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(() => console.log('Service Worker Registered'));
+  }
 </script>
 
 </body>
