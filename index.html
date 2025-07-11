@@ -233,7 +233,7 @@ async function populateCameraOptions() {
 shutter.onclick = () => {
   const w = video.videoWidth;
   const h = video.videoHeight;
-  const border = Math.floor(Math.min(w, h) * 0.05);
+  const border = Math.floor(Math.min(w, h) * 0.09);
 
   const finalW = w + border * 2;
   const finalH = h + border * 2;
@@ -281,10 +281,18 @@ shutter.onclick = () => {
 startCamera();
 </script>
 <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log('Service Worker Registered'));
-  }
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const newWorker = reg.installing;
+      newWorker.onstatechange = () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          alert('New update available! Please refresh.');
+        }
+      };
+    };
+  });
+}
 </script>
 
 </body>
