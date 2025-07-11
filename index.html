@@ -148,6 +148,12 @@
     z-index: 20;
   }
 
+#photo {
+  user-select: auto;
+  -webkit-user-select: auto;
+  pointer-events: auto;
+}
+
   #controls.show {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
@@ -444,9 +450,12 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script>
-  document.addEventListener('contextmenu', function (e) {
+document.addEventListener('contextmenu', function (e) {
+  // Allow context menu only for the final photo
+  if (e.target.id !== 'photo') {
     e.preventDefault();
-  }, { passive: false });
+  }
+}, { passive: false });
 </script>
 </body>
 </html>
