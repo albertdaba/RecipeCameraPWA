@@ -341,7 +341,7 @@ function showCameraRadialMenu() {
 
   const radius = 100; // distance from center
   const spread = Math.PI / 3; // 60-degree arc
-  const startAngle = Math.PI / 2 - spread / 2;
+  const startAngle = 0 - spread / 2;
 
   options.forEach((opt, index) => {
     const angle = startAngle + (index * spread / (count - 1 || 1));
