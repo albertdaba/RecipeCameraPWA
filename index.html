@@ -209,49 +209,25 @@ async function populateCameraOptions() {
 shutter.onclick = () => {
   const w = video.videoWidth;
   const h = video.videoHeight;
-const borderTop = Math.floor(Math.min(w, h) * 0.06);
-const borderSide = Math.floor(Math.min(w, h) * 0.6);
-const borderBottom = Math.floor(Math.min(w, h) * 0.25);
+  const borderTop = Math.floor(Math.min(w, h) * 0.06);
+  const borderSide = Math.floor(Math.min(w, h) * 0.6);
+  const borderBottom = Math.floor(Math.min(w, h) * 0.25);
 
-const finalW = w + borderSide * 2;
-const finalH = h + borderTop + borderBottom;
-canvas.width = finalW;
-canvas.height = finalH;
+  const finalW = w + borderSide * 2;
+  const finalH = h + borderTop + borderBottom;
+  canvas.width = finalW;
+  canvas.height = finalH;
 
-const ctx = canvas.getContext('2d');
-ctx.fillStyle = "#fff";
-ctx.fillRect(0, 0, finalW, finalH);
-ctx.drawImage(video, borderSide, borderTop, w, h);
-// TEMP: Draw red bar at bottom of full canvas
-ctx.fillStyle = 'red';
-ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
-  const imgData = ctx.getImageData(borderSide, borderTop, w, h);
-  const d = imgData.data;
+  const ctx = canvas.getContext('2d');
 
-  for (let i = 0; i < d.length; i += 4) {
-    let r = d[i], g = d[i + 1], b = d[i + 2];
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, finalW, finalH);
+  ctx.drawImage(video, borderSide, borderTop, w, h);
 
-    if (film === "acros") {
-      const avg = (r + g + b) / 3;
-      r = g = b = avg;
-    } else if (film === "kodachrome") {
-      const avg = (r + g + b) / 3;
-      r = r * 0.85 + avg * 0.15;
-      g = g * 0.85 + avg * 0.15;
-      b = b * 0.85 + avg * 0.15;
-    }
+  ctx.fillStyle = 'red';
+  ctx.fillRect(0, finalH - 10, finalW, 10);
 
-    if (grainAmount > 0) {
-      const n = (Math.random() - 0.5) * 2 * grainAmount;
-      r += n; g += n; b += n;
-    }
-
-    d[i] = Math.max(0, Math.min(255, r));
-    d[i + 1] = Math.max(0, Math.min(255, g));
-    d[i + 2] = Math.max(0, Math.min(255, b));
-  }
-
-  ctx.putImageData(imgData, borderSide, borderTop);
+  // 🟡 Display result
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
   photo.style.display = 'block';
   video.style.display = 'none';
