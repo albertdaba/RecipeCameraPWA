@@ -96,6 +96,8 @@
   cursor: pointer;
   z-index: 20;
   backdrop-filter: blur(6px);
+  user-select: none; /* ← ADD THIS */
+  -webkit-user-select: none; /* iOS Safari */
 }
 
 #cameraRadialMenu {
@@ -172,6 +174,12 @@
     padding: 4px;
     font-size: 16px;
   }
+
+* {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 </style>
 
 </head>
@@ -426,6 +434,10 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-
+<script>
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+  }, { passive: false });
+</script>
 </body>
 </html>
