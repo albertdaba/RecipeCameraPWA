@@ -80,6 +80,50 @@
   z-index: 12;
 }
 
+#cameraRadialTrigger {
+  position: fixed;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 24px;
+  text-align: center;
+  line-height: 44px;
+  cursor: pointer;
+  z-index: 20;
+  backdrop-filter: blur(6px);
+}
+
+#cameraRadialMenu {
+  position: fixed;
+  left: 10px;
+  top: 50%;
+  width: 200px;
+  height: 200px;
+  margin-left: -100px;
+  margin-top: -100px;
+  pointer-events: none;
+  z-index: 21;
+}
+
+.camera-option {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid white;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+  transition: background 0.2s;
+}
 
   #controls {
     position: absolute;
@@ -146,6 +190,10 @@
       <option value="kodachrome">Kodachrome</option>
       <option value="acros">Acros (Monochrome)</option>
     </select>
+
+<div id="cameraRadialTrigger">📷</div>
+<div id="cameraRadialMenu"></div>
+
   </label>
   <label>Film Grain (<span id="grain-val">19</span>)
     <input type="range" id="grain" min="0" max="50" value="19">
@@ -231,6 +279,82 @@ async function populateCameraOptions() {
 
   if (currentId) cameraSelect.value = currentId;
 }
+
+
+const cameraRadialTrigger = document.getElementById('cameraRadialTrigger');
+const cameraRadialMenu = document.getElementById('cameraRadialMenu');
+
+let radialTimeout = null;
+let radialActive = false;
+let currentHoveredOption = null;
+
+cameraRadialTrigger.addEventListener('pointerdown', () => {
+  radialTimeout = setTimeout(() => {
+    showCameraRadialMenu();
+    radialActive = true;
+  }, 300);
+});
+
+document.addEventListener('pointermove', (e) => {
+  if (!radialActive) return;
+
+  const options = document.querySelectorAll('.camera-option');
+  currentHoveredOption = null;
+
+  options.forEach(opt => {
+    const rect = opt.getBoundingClientRect();
+    if (
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom
+    ) {
+      opt.style.background = 'rgba(255,255,255,0.4)';
+      currentHoveredOption = opt;
+    } else {
+      opt.style.background = 'rgba(255,255,255,0.15)';
+    }
+  });
+});
+
+document.addEventListener('pointerup', () => {
+  clearTimeout(radialTimeout);
+
+  if (radialActive) {
+    if (currentHoveredOption) {
+      const value = currentHoveredOption.getAttribute('data-device-id');
+      cameraSelect.value = value;
+      startCamera(value);
+    }
+
+    cameraRadialMenu.innerHTML = '';
+    radialActive = false;
+  }
+});
+
+function showCameraRadialMenu() {
+  cameraRadialMenu.innerHTML = '';
+  const options = Array.from(cameraSelect.options);
+  const count = options.length;
+  const radius = 80;
+
+  options.forEach((opt, index) => {
+    const angle = (index / (count - 1 || 1)) * Math.PI / 2; // quarter-circle arc
+    const x = Math.cos(angle) * radius + 100;
+    const y = Math.sin(angle) * radius + 100;
+
+    const btn = document.createElement('div');
+    btn.className = 'camera-option';
+    btn.style.left = `${x}px`;
+    btn.style.top = `${y}px`;
+    btn.textContent = opt.textContent;
+    btn.setAttribute('data-device-id', opt.value);
+    cameraRadialMenu.appendChild(btn);
+  });
+}
+
+
+
 
 shutter.onclick = () => {
   const w = video.videoWidth;
