@@ -100,15 +100,16 @@
 
 #cameraRadialMenu {
   position: fixed;
-  left: 10px;
+  left: 44px; /* trigger is 44px wide, so start just to its right */
   top: 50%;
   width: 200px;
   height: 200px;
-  margin-left: -100px;
+  margin-left: -20px; /* slight left shift for visual centering */
   margin-top: -100px;
   pointer-events: none;
   z-index: 21;
 }
+
 
 .camera-option {
   position: absolute;
@@ -333,19 +334,14 @@ document.addEventListener('pointerup', () => {
 
 function showCameraRadialMenu() {
   cameraRadialMenu.innerHTML = '';
+
   const options = Array.from(cameraSelect.options);
   const count = options.length;
-
-  // Clamp count to max 7 for logic safety
   const clampedCount = Math.max(1, Math.min(7, count));
-
-  // Spread gets narrower with more options
-  const baseSpread = Math.PI * 0.8; // 144°
-  const minSpread = Math.PI * 0.4;  // 72°
-  const spread = baseSpread - ((clampedCount - 1) / 6) * (baseSpread - minSpread);
-
-  const radius = 90 + (clampedCount - 1) * 6; // Gradually increase radius for more items
-  const startAngle = Math.PI / 2 - spread / 2;
+  const startAngle = -Math.PI / 4; // -45 degrees
+  const endAngle = Math.PI / 4;    // +45 degrees
+  const spread = endAngle - startAngle;
+  const radius = 90 + (clampedCount - 1) * 6;
 
   options.forEach((opt, index) => {
     const angle = startAngle + (index * spread / (clampedCount - 1 || 1));
@@ -363,7 +359,6 @@ function showCameraRadialMenu() {
     cameraRadialMenu.appendChild(btn);
   });
 }
-
 
 
 
