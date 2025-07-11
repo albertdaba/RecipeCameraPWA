@@ -18,7 +18,6 @@
       align-items: center;
       justify-content: flex-start;
       min-height: 100vh;
-      overflow-x: hidden;
       overflow-y: auto;
       padding: 1rem 0;
     }
@@ -32,36 +31,51 @@
     }
 
     img {
-      max-width: 100%;
-      background: black;
       display: block;
-      image-rendering: auto;
+      background: black;
+      width: 100%;
+      max-width: 480px;
       height: auto;
-      width: auto;
-      max-height: none;
-      margin-bottom: 80px; /* for visibility */
+      margin-bottom: 80px; /* to ensure red bar shows */
     }
 
     #shutter {
-      position: absolute; bottom: 20px; left: 50%;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
       transform: translateX(-50%);
-      width: 70px; height: 70px;
-      border-radius: 50%; border: 4px solid white;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 4px solid white;
       background: rgba(255, 255, 255, 0.1);
-      cursor: pointer; z-index: 10;
+      cursor: pointer;
+      z-index: 10;
     }
 
     #menu-btn {
-      position: absolute; top: 12px; right: 12px;
-      width: 44px; height: 44px; border-radius: 50%;
-      background: rgba(255,255,255,.2); color: white;
-      font-size: 26px; text-align: center; line-height: 44px;
-      backdrop-filter: blur(6px); cursor: pointer; z-index: 11;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      color: white;
+      font-size: 26px;
+      text-align: center;
+      line-height: 44px;
+      backdrop-filter: blur(6px);
+      cursor: pointer;
+      z-index: 11;
     }
 
     #next-btn {
-      position: absolute; top: 12px; left: 12px;
-      font-size: 18px; padding: 6px 10px;
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-size: 18px;
+      padding: 6px 10px;
       background: rgba(255,255,255,0.15);
       border: 1px solid #fff;
       border-radius: 6px;
@@ -71,26 +85,37 @@
     }
 
     #controls {
-      position: absolute; bottom: 20px; left: 50%;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
       transform: translateX(-50%) translateY(100%);
-      background: rgba(0,0,0,0.85); padding: 12px;
-      border-radius: 10px; transition: transform 0.3s ease, opacity 0.3s;
-      opacity: 0; pointer-events: none;
-      display: flex; flex-direction: column; gap: 10px;
-      width: calc(100% - 32px); max-width: 480px;
+      background: rgba(0,0,0,0.85);
+      padding: 12px;
+      border-radius: 10px;
+      transition: transform 0.3s ease, opacity 0.3s;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: calc(100% - 32px);
+      max-width: 480px;
       z-index: 20;
     }
 
     #controls.show {
       transform: translateX(-50%) translateY(0);
-      opacity: 1; pointer-events: auto;
+      opacity: 1;
+      pointer-events: auto;
     }
 
     input[type=range], select { width: 100%; }
     label { font-size: 14px; }
 
     #cameraSelect {
-      position: absolute; top: 12px; left: 50%;
+      position: absolute;
+      top: 12px;
+      left: 50%;
       transform: translateX(-50%);
       z-index: 15;
       background: rgba(0, 0, 0, 0.7);
@@ -219,24 +244,24 @@ shutter.onclick = () => {
 
   const ctx = canvas.getContext('2d');
 
-  // Draw blue background to detect canvas area
-  ctx.fillStyle = "blue";
+  // Debug background
+  ctx.fillStyle = 'blue';
   ctx.fillRect(0, 0, finalW, finalH);
 
-  // Draw white frame
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, finalW, finalH);
 
-  // Draw live video into center
   ctx.drawImage(video, borderSide, borderTop, w, h);
 
-  // Draw red bar on black bottom (test area)
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, finalH - 20, finalW, 20);
-  ctx.fillStyle = "red";
-  ctx.fillRect(0, finalH - 10, finalW, 10);
+  // Debug black bar for contrast
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, finalH - 40, finalW, 40);
 
-  // Display result
+  // Actual red bar
+  ctx.fillStyle = 'red';
+  ctx.fillRect(0, finalH - 30, finalW, 30);
+
+  // Display
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
   photo.style.display = 'block';
   video.style.display = 'none';
@@ -246,10 +271,10 @@ shutter.onclick = () => {
 startCamera();
 </script>
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js')
-    .then(() => console.log('Service Worker Registered'));
-}
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(() => console.log('Service Worker Registered'));
+  }
 </script>
 
 </body>
