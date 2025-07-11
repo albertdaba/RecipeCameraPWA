@@ -1,3 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+  <meta charset="UTF-8">
+  <title>Camera PWA – Film App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+  
 <style>
   body {
     margin: 0;
@@ -112,3 +125,167 @@
     font-size: 16px;
   }
 </style>
+
+</head>
+<body>
+
+<select id="cameraSelect"></select>
+<video id="video" autoplay playsinline></video>
+<img id="photo" style="display:none">
+<canvas id="canvas" style="display:none"></canvas>
+
+<div id="menu-btn">☰</div>
+<div id="next-btn">↩ Next</div>
+<button id="shutter"></button>
+
+<div id="controls">
+  <label>Film Simulation
+    <select id="film">
+      <option value="kodachrome">Kodachrome</option>
+      <option value="acros">Acros (Monochrome)</option>
+    </select>
+  </label>
+  <label>Film Grain (<span id="grain-val">15</span>)
+    <input type="range" id="grain" min="0" max="50" value="15">
+  </label>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const photo = document.getElementById('photo');
+const shutter = document.getElementById('shutter');
+const menuBtn = document.getElementById('menu-btn');
+const nextBtn = document.getElementById('next-btn');
+const controls = document.getElementById('controls');
+const grainSlider = document.getElementById('grain');
+const grainVal = document.getElementById('grain-val');
+const filmSelect = document.getElementById('film');
+const cameraSelect = document.getElementById('cameraSelect');
+
+let currentStream = null;
+let grainAmount = +grainSlider.value;
+let film = filmSelect.value;
+
+grainSlider.oninput = () => {
+  grainAmount = +grainSlider.value;
+  grainVal.textContent = grainAmount;
+};
+
+filmSelect.onchange = () => {
+  film = filmSelect.value;
+};
+
+menuBtn.onclick = () => {
+  controls.classList.toggle('show');
+};
+
+nextBtn.onclick = () => {
+  video.style.display = 'block';
+  photo.style.display = 'none';
+  nextBtn.style.display = 'none';
+};
+
+cameraSelect.onchange = () => {
+  const deviceId = cameraSelect.value;
+  startCamera(deviceId);
+};
+
+async function startCamera(deviceId = null) {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+  }
+
+  const constraints = {
+    video: deviceId
+      ? { deviceId: { exact: deviceId }, width: { ideal: 4096 }, height: { ideal: 2160 } }
+      : { facingMode: { exact: "environment" }, width: { ideal: 4096 }, height: { ideal: 2160 } }
+  };
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    currentStream = stream;
+    video.srcObject = stream;
+    await video.play();
+    await populateCameraOptions();
+  } catch (e) {
+    alert('Camera Error: ' + e.message);
+  }
+}
+
+async function populateCameraOptions() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoInputs = devices.filter(device => device.kind === 'videoinput');
+
+  const currentId = cameraSelect.value;
+  cameraSelect.innerHTML = '';
+
+  videoInputs.forEach((device, i) => {
+    const opt = document.createElement('option');
+    opt.value = device.deviceId;
+    opt.textContent = device.label || `Camera ${i + 1}`;
+    cameraSelect.appendChild(opt);
+  });
+
+  if (currentId) cameraSelect.value = currentId;
+}
+
+shutter.onclick = () => {
+  const w = video.videoWidth;
+  const h = video.videoHeight;
+  const border = Math.floor(Math.min(w, h) * 0.05);
+
+  const finalW = w + border * 2;
+  const finalH = h + border * 2;
+  canvas.width = finalW;
+  canvas.height = finalH;
+
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, finalW, finalH);
+  ctx.drawImage(video, border, border, w, h);
+
+  const imgData = ctx.getImageData(border, border, w, h);
+  const d = imgData.data;
+
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i + 1], b = d[i + 2];
+
+    if (film === "acros") {
+      const avg = (r + g + b) / 3;
+      r = g = b = avg;
+    } else if (film === "kodachrome") {
+      const avg = (r + g + b) / 3;
+      r = r * 0.85 + avg * 0.15;
+      g = g * 0.85 + avg * 0.15;
+      b = b * 0.85 + avg * 0.15;
+    }
+
+    if (grainAmount > 0) {
+      const n = (Math.random() - 0.5) * 2 * grainAmount;
+      r += n; g += n; b += n;
+    }
+
+    d[i] = Math.max(0, Math.min(255, r));
+    d[i + 1] = Math.max(0, Math.min(255, g));
+    d[i + 2] = Math.max(0, Math.min(255, b));
+  }
+
+  ctx.putImageData(imgData, border, border);
+  photo.src = canvas.toDataURL('image/jpeg', 1.0);
+  photo.style.display = 'block';
+  video.style.display = 'none';
+  nextBtn.style.display = 'block';
+};
+
+startCamera();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(() => console.log('Service Worker Registered'));
+  }
+</script>
+
+</body>
+</html>
