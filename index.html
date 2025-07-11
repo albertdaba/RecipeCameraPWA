@@ -222,7 +222,9 @@ const ctx = canvas.getContext('2d');
 ctx.fillStyle = "#fff";
 ctx.fillRect(0, 0, finalW, finalH);
 ctx.drawImage(video, borderSide, borderTop, w, h);
-
+// TEMP: Draw red bar at bottom of full canvas
+ctx.fillStyle = 'red';
+ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
   const imgData = ctx.getImageData(borderSide, borderTop, w, h);
   const d = imgData.data;
 
