@@ -123,6 +123,7 @@
   pointer-events: auto;
   transform: translate(-50%, -50%);
   transition: background 0.2s;
+  transform-origin: left center;
 }
 
   #controls {
@@ -169,10 +170,6 @@
     border-radius: 6px;
     padding: 4px;
     font-size: 16px;
-  }
-
-  .camera-option {
-    transform-origin: left center !important;
   }
 </style>
 
@@ -339,12 +336,19 @@ function showCameraRadialMenu() {
   const options = Array.from(cameraSelect.options);
   const count = options.length;
 
-  const radius = 100; // distance from center
-  const spread = Math.PI / 3; // 60-degree arc
-  const startAngle = 0 - spread / 2;
+  // Clamp count to max 7 for logic safety
+  const clampedCount = Math.max(1, Math.min(7, count));
+
+  // Spread gets narrower with more options
+  const baseSpread = Math.PI * 0.8; // 144°
+  const minSpread = Math.PI * 0.4;  // 72°
+  const spread = baseSpread - ((clampedCount - 1) / 6) * (baseSpread - minSpread);
+
+  const radius = 90 + (clampedCount - 1) * 6; // Gradually increase radius for more items
+  const startAngle = Math.PI / 2 - spread / 2;
 
   options.forEach((opt, index) => {
-    const angle = startAngle + (index * spread / (count - 1 || 1));
+    const angle = startAngle + (index * spread / (clampedCount - 1 || 1));
     const x = Math.cos(angle) * radius + 100;
     const y = Math.sin(angle) * radius + 100;
 
@@ -352,7 +356,7 @@ function showCameraRadialMenu() {
     btn.className = 'camera-option';
     btn.style.left = `${x}px`;
     btn.style.top = `${y}px`;
-    btn.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg)`; // Rotate label
+    btn.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg)`;
     btn.style.transformOrigin = 'left center';
     btn.textContent = opt.textContent;
     btn.setAttribute('data-device-id', opt.value);
