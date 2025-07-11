@@ -334,10 +334,14 @@ function showCameraRadialMenu() {
   cameraRadialMenu.innerHTML = '';
   const options = Array.from(cameraSelect.options);
   const count = options.length;
-  const radius = 80;
+
+  // Spread full half-circle (π radians) for left side
+  const totalAngle = Math.PI; 
+  const startAngle = Math.PI / 2; // Start from center left
+  const radius = 100 + Math.min(40 * count, 200); // Dynamically scale radius
 
   options.forEach((opt, index) => {
-    const angle = (index / (count - 1 || 1)) * Math.PI / 2; // quarter-circle arc
+    const angle = startAngle - (totalAngle * (index / (count - 1 || 1))); // Distribute evenly
     const x = Math.cos(angle) * radius + 100;
     const y = Math.sin(angle) * radius + 100;
 
