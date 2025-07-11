@@ -262,10 +262,8 @@ shutter.onclick = () => {
   ctx.fillRect(0, finalH - 30, finalW, 30);
 
   // Display
-  photo.src = canvas.toDataURL('image/jpeg', 1.0);
-  photo.style.display = 'block';
-  video.style.display = 'none';
-  nextBtn.style.display = 'block';
+const dataURL = canvas.toDataURL('image/jpeg', 1.0);
+window.open(dataURL, '_blank');
 };
 
 startCamera();
