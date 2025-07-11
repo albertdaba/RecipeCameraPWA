@@ -307,22 +307,31 @@ document.addEventListener('pointermove', (e) => {
   if (!radialActive) return;
 
   const options = document.querySelectorAll('.camera-option');
-  currentHoveredOption = null;
+  let closest = null;
+  let minDist = Infinity;
 
   options.forEach(opt => {
     const rect = opt.getBoundingClientRect();
-    if (
-      e.clientX >= rect.left &&
-      e.clientX <= rect.right &&
-      e.clientY >= rect.top &&
-      e.clientY <= rect.bottom
-    ) {
-      opt.style.background = 'rgba(255,255,255,0.4)';
-      currentHoveredOption = opt;
-    } else {
-      opt.style.background = 'rgba(255,255,255,0.15)';
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < minDist && dist < 80) {
+      minDist = dist;
+      closest = opt;
     }
+
+    opt.style.background = 'rgba(255,255,255,0.15)';
   });
+
+  currentHoveredOption = closest;
+
+  if (closest) {
+    closest.style.background = 'rgba(255,255,255,0.4)';
+  }
 });
 
 document.addEventListener('pointerup', () => {
