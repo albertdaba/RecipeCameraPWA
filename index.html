@@ -170,6 +170,10 @@
     padding: 4px;
     font-size: 16px;
   }
+
+  .camera-option {
+    transform-origin: left center !important;
+  }
 </style>
 
 </head>
@@ -335,13 +339,12 @@ function showCameraRadialMenu() {
   const options = Array.from(cameraSelect.options);
   const count = options.length;
 
-  // Spread full half-circle (π radians) for left side
-  const totalAngle = Math.PI; 
-  const startAngle = Math.PI / 2; // Start from center left
-  const radius = 100 + Math.min(40 * count, 200); // Dynamically scale radius
+  const radius = 100; // distance from center
+  const spread = Math.PI / 3; // 60-degree arc
+  const startAngle = Math.PI / 2 - spread / 2;
 
   options.forEach((opt, index) => {
-    const angle = startAngle - (totalAngle * (index / (count - 1 || 1))); // Distribute evenly
+    const angle = startAngle + (index * spread / (count - 1 || 1));
     const x = Math.cos(angle) * radius + 100;
     const y = Math.sin(angle) * radius + 100;
 
@@ -349,6 +352,8 @@ function showCameraRadialMenu() {
     btn.className = 'camera-option';
     btn.style.left = `${x}px`;
     btn.style.top = `${y}px`;
+    btn.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg)`; // Rotate label
+    btn.style.transformOrigin = 'left center';
     btn.textContent = opt.textContent;
     btn.setAttribute('data-device-id', opt.value);
     cameraRadialMenu.appendChild(btn);
