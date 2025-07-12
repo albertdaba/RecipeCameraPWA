@@ -9,8 +9,6 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#000000">
 <link rel="apple-touch-icon" href="icon-192.png">
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
-
 
   
 <style>
@@ -250,8 +248,6 @@ nextBtn.onclick = () => {
   video.style.display = 'block';
   photo.style.display = 'none';
   nextBtn.style.display = 'none';
-  document.getElementById('text-btn').style.display = 'none';
-
 };
 
 cameraSelect.onchange = () => {
@@ -291,7 +287,7 @@ async function populateCameraOptions() {
   videoInputs.forEach((device, i) => {
     const opt = document.createElement('option');
     opt.value = device.deviceId;
-    opt.textContent = device.label || Camera ${i + 1};
+    opt.textContent = device.label || `Camera ${i + 1}`;
     cameraSelect.appendChild(opt);
   });
 
@@ -377,9 +373,9 @@ function showCameraRadialMenu() {
 
     const btn = document.createElement('div');
     btn.className = 'camera-option';
-    btn.style.left = ${x}px;
-    btn.style.top = ${y}px;
-    btn.style.transform = translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg);
+    btn.style.left = `${x}px`;
+    btn.style.top = `${y}px`;
+    btn.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg)`;
     btn.style.transformOrigin = 'left center';
     btn.textContent = opt.textContent;
     btn.setAttribute('data-device-id', opt.value);
@@ -437,15 +433,9 @@ canvas.height = finalH;
   photo.style.display = 'block';
   video.style.display = 'none';
   nextBtn.style.display = 'block';
-  document.getElementById('text-btn').style.display = 'block';
-
 };
 
-
-  
 startCamera();
- 
-
 </script>
 <script>
 if ('serviceWorker' in navigator) {
@@ -468,45 +458,6 @@ document.addEventListener('contextmenu', function (e) {
     e.preventDefault();
   }
 }, { passive: false });
-
-
 </script>
-<button id="text-btn" style="
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  padding: 8px 12px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid white;
-  color: white;
-  font-size: 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: none;
-  z-index: 12;
-  font-family: 'Patrick Hand', cursive;
-">TEXT</button>
-  
-<script>
-  const textBtn = document.getElementById('text-btn');
-  textBtn.onclick = () => {
-    const userText = prompt("Enter one-liner caption:");
-    if (!userText) return;
-
-    const ctx = canvas.getContext('2d');
-    const finalW = canvas.width;
-    const finalH = canvas.height;
-    const border = Math.floor(Math.min(video.videoWidth, video.videoHeight) * 0.09);
-    const bottomBorder = border * 2;
-
-    ctx.fillStyle = "#000";
-    ctx.font = `${Math.floor(border * 0.6)}px 'Patrick Hand', cursive`;
-    ctx.textAlign = "center";
-    ctx.fillText(userText, finalW / 2, finalH - bottomBorder / 2);
-
-    photo.src = canvas.toDataURL('image/jpeg', 1.0);
-  };
-</script>
-
 </body>
 </html>
