@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#000000">
 <link rel="apple-touch-icon" href="icon-192.png">
-
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   
 <style>
   body {
@@ -201,6 +201,42 @@
   -webkit-user-select: none;
 }
 
+
+#text-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  font-size: 16px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: none;
+  z-index: 12;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#textInputBox {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 400px;
+  padding: 10px;
+  font-size: 18px;
+  border: 2px solid white;
+  border-radius: 6px;
+  display: none;
+  z-index: 100;
+  font-family: 'Patrick Hand', cursive;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  outline: none;
+}
+
 </style>
 
 </head>
@@ -263,7 +299,10 @@ nextBtn.onclick = () => {
   video.style.display = 'block';
   photo.style.display = 'none';
   nextBtn.style.display = 'none';
-  document.getElementById('text-btn').style.display = 'none';
+  textBtn.style.display = 'none';
+  textInputBox.style.display = 'none';
+  textInputBox.value = '';
+  addedCaption = '';
 };
 
 cameraSelect.onchange = () => {
@@ -446,12 +485,38 @@ canvas.height = finalH;
 
   ctx.putImageData(imgData, border, border);
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
-  photo.style.display = 'block';
-  video.style.display = 'none';
-  nextBtn.style.display = 'block';
+photo.style.display = 'block';
+video.style.display = 'none';
+nextBtn.style.display = 'block';
+textBtn.style.display = 'block';
   document.getElementById('text-btn').style.display = 'block';
   
 };
+const textBtn = document.getElementById('text-btn');
+const textInputBox = document.getElementById('textInputBox');
+let addedCaption = '';
+
+textBtn.onclick = () => {
+  textInputBox.style.display = 'block';
+  textInputBox.focus();
+};
+
+textInputBox.addEventListener('change', () => {
+  addedCaption = textInputBox.value;
+  textInputBox.style.display = 'none';
+  
+  const w = canvas.width;
+  const h = canvas.height;
+  const ctx = canvas.getContext('2d');
+
+  ctx.font = '24px "Patrick Hand", cursive';
+  ctx.fillStyle = '#000';
+  ctx.textAlign = 'center';
+  ctx.fillText(addedCaption, w / 2, h - 15); // adjust Y offset as needed
+
+  photo.src = canvas.toDataURL('image/jpeg', 1.0);
+});
+
 
 startCamera();
 </script>
@@ -481,7 +546,8 @@ document.addEventListener('contextmenu', function (e) {
 <button id="text-btn" style="display:none;">TEXT</button>
 
 
-
+<div id="text-btn">TEXT</div>
+<input type="text" id="textInputBox" placeholder="Type caption..." maxlength="100">
 
 
 </body>
