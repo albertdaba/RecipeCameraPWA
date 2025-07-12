@@ -129,24 +129,33 @@
   transform-origin: left center;
 }
 
-  #controls {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(100%);
-    background: rgba(0,0,0,0.85);
-    padding: 12px;
-    border-radius: 10px;
-    transition: transform 0.3s ease, opacity 0.3s;
-    opacity: 0;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: calc(100% - 32px);
-    max-width: 480px;
-    z-index: 20;
-  }
+#controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  background: rgba(0,0,0,0.85);
+  padding: 12px;
+  border-radius: 10px;
+  transition: transform 0.3s ease, opacity 0.3s;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  max-height: 70vh;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+#controls.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
 
 #photo {
   user-select: auto;
@@ -202,6 +211,16 @@
 <div id="cameraRadialTrigger"></div>
 <div id="cameraRadialMenu"></div>
 <div id="controls">
+  <button id="close-controls" style="
+  align-self: flex-end;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+">✕</button>
+
   <label>Film Simulation
     <select id="film">
       <option value="kodachrome">Kodachrome</option>
@@ -280,6 +299,9 @@ filmSelect.onchange = () => {
 
 menuBtn.onclick = () => {
   controls.classList.toggle('show');
+};
+document.getElementById('close-controls').onclick = () => {
+  controls.classList.remove('show');
 };
 
 nextBtn.onclick = () => {
@@ -473,7 +495,7 @@ if (film === "acros" || film === "kodachrome") {
     let newL = l;
     if ((h >= 0 && h <= 60) || (h >= 330 && h <= 360)) newL -= l * colorChrome; // reds + yellow
     else if (h >= 90 && h <= 150) newL -= l * colorChrome; // green
-    else if (h >= 210 && h <= 250) newL -= l * chromeBlue; // blue
+    else if (h >= 210 && h <= 250) newL -= l * colorchromeBlue; // blue
 
     // === Highlights/Shadows Gamma ===
     if (newL > 0.5) newL = Math.pow(newL, highlightGamma);
