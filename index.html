@@ -9,6 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#000000">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
 
   
 <style>
@@ -213,6 +214,11 @@
     <input type="range" id="grain" min="0" max="50" value="19">
   </label>
 </div>
+  
+  <label>
+    <input type="checkbox" id="addTextToggle">
+    Border Text
+  </label>
 
 <script>
 const video = document.getElementById('video');
@@ -427,6 +433,28 @@ shutter.onclick = () => {
   }
 
   ctx.putImageData(imgData, border, border);
+  const addText = document.getElementById('addTextToggle').checked;
+if (addText) {
+  const userText = prompt("Enter caption for the photo:");
+  if (userText) {
+    // Recalculate bottom border for extra space
+    const extraBorder = Math.floor(border * 1.2);
+    canvas.height = finalH + extraBorder;
+    
+    // Shift existing image down
+    const imgData = ctx.getImageData(0, 0, finalW, finalH);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, finalW, finalH + extraBorder);
+    ctx.putImageData(imgData, 0, 0);
+
+    // Add handwritten caption
+    ctx.fillStyle = "#000";
+    ctx.font = `${Math.floor(border * 0.6)}px 'Patrick Hand', cursive`;
+    ctx.textAlign = "center";
+    ctx.fillText(userText, finalW / 2, finalH + extraBorder / 1.5);
+  }
+}
+
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
   photo.style.display = 'block';
   video.style.display = 'none';
