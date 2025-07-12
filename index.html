@@ -297,7 +297,7 @@ async function populateCameraOptions() {
   videoInputs.forEach((device, i) => {
     const opt = document.createElement('option');
     opt.value = device.deviceId;
-    opt.textContent = device.label || Camera ${i + 1};
+    opt.textContent = device.label || `Camera ${i + 1}`;
     cameraSelect.appendChild(opt);
   });
 
@@ -383,9 +383,10 @@ function showCameraRadialMenu() {
 
     const btn = document.createElement('div');
     btn.className = 'camera-option';
-    btn.style.left = ${x}px;
-    btn.style.top = ${y}px;
-    btn.style.transform = translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg);
+    btn.style.left = `${x}px`;
+    btn.style.top = `${y}px`;
+    btn.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg)`;
+
     btn.style.transformOrigin = 'left center';
     btn.textContent = opt.textContent;
     btn.setAttribute('data-device-id', opt.value);
