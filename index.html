@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,30 +34,6 @@
     background: black;
   }
 
-#colorOverlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none;
-  z-index: 5;
-  background: transparent;
-  mix-blend-mode: screen;
-  opacity: 0.3;
-}
-
-#intensityLabel {
-  position: fixed;
-  top: 60px;
-  right: 20px;
-  padding: 4px 10px;
-  background: rgba(0,0,0,0.7);
-  color: white;
-  font-size: 14px;
-  border-radius: 6px;
-  z-index: 30;
-  display: none;
-}
-
-  
   #shutter {
     position: fixed;
     right: 20px;
@@ -219,8 +196,7 @@
 <video id="video" autoplay playsinline></video>
 <img id="photo" style="display:none">
 <canvas id="canvas" style="display:none"></canvas>
-<div id="colorOverlay"></div>
-<div id="intensityLabel"></div>
+
 <div id="menu-btn">☰</div>
 <div id="next-btn">↩ Next</div>
 <button id="shutter"></button>
@@ -251,11 +227,6 @@ const grainSlider = document.getElementById('grain');
 const grainVal = document.getElementById('grain-val');
 const filmSelect = document.getElementById('film');
 const cameraSelect = document.getElementById('cameraSelect');
-const acrosVariants = ['acros', 'acros-y', 'acros-r', 'acros-g'];
-let currentAcrosIndex = 0;
-let filterIntensity = 1.0;
-const overlay = document.getElementById('colorOverlay');
-const intensityLabel = document.getElementById('intensityLabel');
 
 let currentStream = null;
 let grainAmount = +grainSlider.value;
@@ -317,7 +288,7 @@ async function populateCameraOptions() {
   videoInputs.forEach((device, i) => {
     const opt = document.createElement('option');
     opt.value = device.deviceId;
-    opt.textContent = device.label || `Camera ${i + 1}`;
+    opt.textContent = device.label || Camera ${i + 1};
     cameraSelect.appendChild(opt);
   });
 
@@ -436,31 +407,10 @@ shutter.onclick = () => {
   for (let i = 0; i < d.length; i += 4) {
     let r = d[i], g = d[i + 1], b = d[i + 2];
 
-if (film.startsWith("acros")) {
-  const gray = (r + g + b) / 3;
-  let modR = 0, modG = 0, modB = 0;
-
-  if (film === "acros-y") {
-    modR = +20;
-    modG = +10;
-    modB = -20;
-  } else if (film === "acros-r") {
-    modR = +30;
-    modG = -10;
-    modB = -30;
-  } else if (film === "acros-g") {
-    modR = -20;
-    modG = +20;
-    modB = -10;
-  }
-
-  r = gray + modR * filterIntensity;
-  g = gray + modG * filterIntensity;
-  b = gray + modB * filterIntensity;
-
-  r = g = b = (r + g + b) / 3; // Final monochrome conversion
-}
- else if (film === "kodachrome") {
+    if (film === "acros") {
+      const avg = (r + g + b) / 3;
+      r = g = b = avg;
+    } else if (film === "kodachrome") {
       const avg = (r + g + b) / 3;
       r = r * 0.85 + avg * 0.15;
       g = g * 0.85 + avg * 0.15;
@@ -483,76 +433,7 @@ if (film.startsWith("acros")) {
   video.style.display = 'none';
   nextBtn.style.display = 'block';
 };
-function updateOverlayColor() {
-  const variant = acrosVariants[currentAcrosIndex];
-  film = variant;
-  filmSelect.value = 'acros';
 
-  let color = 'transparent';
-
-  switch (variant) {
-    case 'acros-y': color = '255,255,0'; break;
-    case 'acros-r': color = '255,0,0'; break;
-    case 'acros-g': color = '0,255,0'; break;
-  }
-
-  overlay.style.background = color === 'transparent'
-    ? 'transparent'
-    : `rgba(${color}, ${Math.min(0.8, 0.3 + filterIntensity * 0.25)})`;
-}
-
-
-let touchStartX = 0;
-let touchEndX = 0;
-let touchStartY = 0;
-let touchEndY = 0;
-
-document.addEventListener('touchstart', e => {
-  touchStartX = e.changedTouches[0].screenX;
-  touchStartY = e.changedTouches[0].screenY;
-});
-
-document.addEventListener('touchend', e => {
-  touchEndX = e.changedTouches[0].screenX;
-  touchEndY = e.changedTouches[0].screenY;
-  handleSwipeGesture();
-});
-
-function handleSwipeGesture() {
-  const deltaX = touchEndX - touchStartX;
-  const deltaY = touchEndY - touchStartY;
-  const threshold = 50;
-
-  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
-    // Horizontal swipe: switch variant
-    if (deltaX < 0) {
-      currentAcrosIndex = (currentAcrosIndex + 1) % acrosVariants.length;
-    } else {
-      currentAcrosIndex = (currentAcrosIndex - 1 + acrosVariants.length) % acrosVariants.length;
-    }
-    updateOverlayColor();
-  } else if (Math.abs(deltaY) > threshold) {
-    // Vertical swipe: adjust intensity
-    if (deltaY < 0) {
-      filterIntensity = Math.min(2.0, filterIntensity + 0.1);
-    } else {
-      filterIntensity = Math.max(0.0, filterIntensity - 0.1);
-    }
-    updateOverlayColor();
-    showIntensityLabel();
-  }
-}
-
-function showIntensityLabel() {
-  intensityLabel.textContent = `Filter Intensity: ${filterIntensity.toFixed(1)}`;
-  intensityLabel.style.display = 'block';
-  clearTimeout(showIntensityLabel._timeout);
-  showIntensityLabel._timeout = setTimeout(() => {
-    intensityLabel.style.display = 'none';
-  }, 1000);
-}
-
-  
 startCamera();
 </script>
 <script>
