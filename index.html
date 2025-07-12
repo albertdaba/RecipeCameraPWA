@@ -130,7 +130,7 @@
 }
 
 #controls {
-  position: absolute;
+  position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%) translateY(100%);
@@ -148,6 +148,7 @@
   max-height: 70vh;
   overflow-y: auto;
   z-index: 20;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
 }
 
 #controls.show {
@@ -162,12 +163,6 @@
   -webkit-user-select: auto;
   pointer-events: auto;
 }
-
-  #controls.show {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-    pointer-events: auto;
-  }
 
   input[type=range], select {
     width: 100%;
@@ -190,10 +185,16 @@
     font-size: 16px;
   }
 
+body, html {
+  height: 100%;
+  overflow: hidden;
+}
+
 * {
   user-select: none;
   -webkit-user-select: none;
 }
+
 
 </style>
 
@@ -284,6 +285,7 @@ filmSelect.onchange = () => {
 
   if (film.startsWith("film_")) {
     const sim = JSON.parse(localStorage.getItem(film));
+    document.getElementById('customFilmName').value = sim.name;
     document.getElementById('colorChrome').value = sim.colorChrome;
     document.getElementById('colorChromeBlue').value = sim.colorChromeBlue;
     document.getElementById('highlightGamma').value = sim.highlightGamma;
@@ -485,8 +487,8 @@ if (film === "acros" || film === "kodachrome") {
     let r = d[i], g = d[i + 1], b = d[i + 2];
 
     // === White Balance ===
-    r *= (1 + wbRed);
-    b *= (1 + wbBlue);
+r = Math.min(255, r * (1 + wbRed));
+b = Math.min(255, b * (1 + wbBlue));
 
     // === Convert RGB to HSL ===
     const [h, s, l] = rgbToHsl(r, g, b);
@@ -495,7 +497,7 @@ if (film === "acros" || film === "kodachrome") {
     let newL = l;
     if ((h >= 0 && h <= 60) || (h >= 330 && h <= 360)) newL -= l * colorChrome; // reds + yellow
     else if (h >= 90 && h <= 150) newL -= l * colorChrome; // green
-    else if (h >= 210 && h <= 250) newL -= l * colorchromeBlue; // blue
+    else if (h >= 210 && h <= 250) newL -= l * colorChromeBlue; // blue
 
     // === Highlights/Shadows Gamma ===
     if (newL > 0.5) newL = Math.pow(newL, highlightGamma);
@@ -634,6 +636,19 @@ document.getElementById('saveFilmBtn').onclick = () => {
   }
 }
 loadSavedFilms();
+if (film.startsWith("film_")) {
+  const sim = JSON.parse(localStorage.getItem(film));
+  document.getElementById('colorChrome').value = sim.colorChrome;
+  document.getElementById('colorChromeBlue').value = sim.colorChromeBlue;
+  document.getElementById('highlightGamma').value = sim.highlightGamma;
+  document.getElementById('shadowGamma').value = sim.shadowGamma;
+  document.getElementById('whiteBalanceRed').value = sim.whiteBalanceRed;
+  document.getElementById('whiteBalanceBlue').value = sim.whiteBalanceBlue;
+  document.getElementById('grain').value = sim.grain;
+  grainAmount = sim.grain;
+  grainVal.textContent = sim.grain;
+}
+
 </script>
 </body>
 </html>
