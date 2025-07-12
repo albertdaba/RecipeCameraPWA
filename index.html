@@ -517,7 +517,34 @@ textInputBox.addEventListener('change', () => {
 });
 
 
-startCamera();
+
+  async function startCamera(deviceId = null) {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+    }
+
+    const constraints = {
+      video: deviceId
+        ? { deviceId: { exact: deviceId }, width: { ideal: 4096 }, height: { ideal: 2160 } }
+        : { facingMode: { exact: "environment" }, width: { ideal: 4096 }, height: { ideal: 2160 } }
+    };
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      currentStream = stream;
+      video.srcObject = stream;
+      await video.play();
+      await populateCameraOptions();
+    } catch (e) {
+      console.error('Camera Error:', e);
+      alert('Camera Error: ' + e.name + ' - ' + e.message);
+    }
+  }
+
+  window.onload = () => {
+    startCamera(); // ✅ called only after everything on the page is loaded
+  };
+
 </script>
 <script>
 if ('serviceWorker' in navigator) {
