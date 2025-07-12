@@ -34,6 +34,20 @@
     background: black;
   }
 
+
+#colorOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-color: rgba(0, 0, 0, 0);
+  z-index: 5;
+  transition: background-color 0.2s ease;
+}
+
+  
   #shutter {
     position: fixed;
     right: 20px;
@@ -194,6 +208,7 @@
 
 <select id="cameraSelect"></select>
 <video id="video" autoplay playsinline></video>
+<div id="colorOverlay"></div>
 <img id="photo" style="display:none">
 <canvas id="canvas" style="display:none"></canvas>
 
@@ -227,7 +242,49 @@ const grainSlider = document.getElementById('grain');
 const grainVal = document.getElementById('grain-val');
 const filmSelect = document.getElementById('film');
 const cameraSelect = document.getElementById('cameraSelect');
+const overlay = document.getElementById('colorOverlay');
+let filterColors = ['none', 'red', 'yellow', 'green'];
+let currentFilterIndex = 0;
+let currentOpacity = 0.4;
 
+function updateOverlay() {
+  const color = filterColors[currentFilterIndex];
+  if (color === 'none') {
+    overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+  } else {
+    const rgba = {
+      red: `rgba(255,0,0,${currentOpacity})`,
+      yellow: `rgba(255,255,0,${currentOpacity})`,
+      green: `rgba(0,255,0,${currentOpacity})`
+    };
+    overlay.style.backgroundColor = rgba[color];
+  }
+}
+updateOverlay();
+let touchStartX = 0, touchStartY = 0;
+
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  let dx = e.changedTouches[0].clientX - touchStartX;
+  let dy = e.changedTouches[0].clientY - touchStartY;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx < -30) currentFilterIndex = (currentFilterIndex + 1) % filterColors.length;
+    else if (dx > 30) currentFilterIndex = (currentFilterIndex - 1 + filterColors.length) % filterColors.length;
+  } else {
+    if (dy < -30) currentOpacity = Math.min(currentOpacity + 0.1, 1.0);
+    else if (dy > 30) currentOpacity = Math.max(currentOpacity - 0.1, 0.0);
+  }
+
+  updateOverlay();
+}, { passive: true });
+
+
+  
 let currentStream = null;
 let grainAmount = +grainSlider.value;
 let film = filmSelect.value;
@@ -288,7 +345,7 @@ async function populateCameraOptions() {
   videoInputs.forEach((device, i) => {
     const opt = document.createElement('option');
     opt.value = device.deviceId;
-    opt.textContent = device.label || Camera ${i + 1};
+    opt.textContent = device.label || `Camera ${i + 1}`;
     cameraSelect.appendChild(opt);
   });
 
@@ -427,11 +484,29 @@ shutter.onclick = () => {
     d[i + 2] = Math.max(0, Math.min(255, b));
   }
 
-  ctx.putImageData(imgData, border, border);
-  photo.src = canvas.toDataURL('image/jpeg', 1.0);
-  photo.style.display = 'block';
-  video.style.display = 'none';
-  nextBtn.style.display = 'block';
+
+ctx.putImageData(imgData, border, border);
+
+// ✅ Apply overlay if any
+if (filterColors[currentFilterIndex] !== 'none') {
+  const colorMap = {
+    red: `rgba(255,0,0,${currentOpacity})`,
+    yellow: `rgba(255,255,0,${currentOpacity})`,
+    green: `rgba(0,255,0,${currentOpacity})`
+  };
+  ctx.fillStyle = colorMap[filterColors[currentFilterIndex]];
+  ctx.fillRect(border, border, w, h);
+}
+
+// ✅ Always generate the photo
+photo.src = canvas.toDataURL('image/jpeg', 1.0);
+photo.style.display = 'block';
+video.style.display = 'none';
+nextBtn.style.display = 'block';
+
+
+  
+
 };
 
 startCamera();
