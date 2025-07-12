@@ -7,7 +7,6 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
   <link rel="apple-touch-icon" href="icon-192.png">
-
   <style>
     body {
       margin: 0;
@@ -21,7 +20,6 @@
       height: 100vh;
       overflow: hidden;
     }
-
     video, img {
       width: 100%;
       max-width: 480px;
@@ -29,16 +27,6 @@
       object-fit: contain;
       background: black;
     }
-
-    #colorOverlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none;
-      background-color: rgba(0,0,0,0);
-      z-index: 5;
-      transition: background-color 0.2s ease;
-    }
-
     #shutter {
       position: fixed;
       right: 20px;
@@ -52,7 +40,6 @@
       cursor: pointer;
       z-index: 10;
     }
-
     #menu-btn {
       position: fixed;
       bottom: 20px;
@@ -70,7 +57,6 @@
       cursor: pointer;
       z-index: 11;
     }
-
     #next-btn {
       position: fixed;
       right: 20px;
@@ -85,7 +71,6 @@
       display: none;
       z-index: 12;
     }
-
     #cameraSelect {
       position: fixed;
       top: 12px;
@@ -98,7 +83,50 @@
       padding: 4px;
       font-size: 16px;
     }
-
+    #cameraRadialTrigger {
+      position: fixed;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 24px;
+      text-align: center;
+      line-height: 44px;
+      cursor: pointer;
+      z-index: 20;
+      backdrop-filter: blur(6px);
+      user-select: none;
+    }
+    #cameraRadialMenu {
+      position: fixed;
+      left: 44px;
+      top: 50%;
+      width: 200px;
+      height: 200px;
+      margin-left: -20px;
+      margin-top: -100px;
+      pointer-events: none;
+      z-index: 21;
+    }
+    .camera-option {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid white;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      pointer-events: auto;
+      transform: translate(-50%, -50%);
+      transition: background 0.2s;
+      transform-origin: left center;
+    }
     #controls {
       position: absolute;
       bottom: 20px;
@@ -117,99 +145,52 @@
       max-width: 480px;
       z-index: 20;
     }
-
     #controls.show {
       transform: translateX(-50%) translateY(0);
       opacity: 1;
       pointer-events: auto;
     }
-
     input[type=range], select {
       width: 100%;
     }
-
     label {
       font-size: 14px;
     }
-
-    * {
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    #cameraRadialTrigger {
+    #colorOverlay {
       position: fixed;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      font-size: 24px;
-      text-align: center;
-      line-height: 44px;
-      cursor: pointer;
-      z-index: 20;
-      backdrop-filter: blur(6px);
-    }
-
-    #cameraRadialMenu {
-      position: fixed;
-      left: 44px;
-      top: 50%;
-      width: 200px;
-      height: 200px;
-      margin-left: -20px;
-      margin-top: -100px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
-      z-index: 21;
+      background-color: rgba(0, 0, 0, 0);
+      z-index: 5;
+      transition: background-color 0.2s ease;
     }
-
-    .camera-option {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid white;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      white-space: nowrap;
-      pointer-events: auto;
-      transform: translate(-50%, -50%);
-      transition: background 0.2s;
-      transform-origin: left center;
-    }
-
   </style>
 </head>
 <body>
-
-<select id="cameraSelect"></select>
-<video id="video" autoplay playsinline></video>
-<div id="colorOverlay"></div>
-<img id="photo" style="display:none">
-<canvas id="canvas" style="display:none"></canvas>
-
-<div id="menu-btn">☰</div>
-<div id="next-btn">↩ Next</div>
-<button id="shutter"></button>
-<div id="cameraRadialTrigger"></div>
-<div id="cameraRadialMenu"></div>
-
-<div id="controls">
-  <label>Film Simulation
-    <select id="film">
-      <option value="kodachrome">Kodachrome</option>
-      <option value="acros">Acros (Monochrome)</option>
-    </select>
-  </label>
-  <label>Film Grain (<span id="grain-val">19</span>)
-    <input type="range" id="grain" min="0" max="50" value="19">
-  </label>
-</div>
+  <select id="cameraSelect"></select>
+  <video id="video" autoplay playsinline></video>
+  <div id="colorOverlay"></div>
+  <img id="photo" style="display:none">
+  <canvas id="canvas" style="display:none"></canvas>
+  <div id="menu-btn">☰</div>
+  <div id="next-btn">↩ Next</div>
+  <button id="shutter"></button>
+  <div id="cameraRadialTrigger"></div>
+  <div id="cameraRadialMenu"></div>
+  <div id="controls">
+    <label>Film Simulation
+      <select id="film">
+        <option value="acros" selected>Acros (Monochrome)</option>
+        <option value="kodachrome">Kodachrome</option>
+      </select>
+    </label>
+    <label>Film Grain (<span id="grain-val">19</span>)
+      <input type="range" id="grain" min="0" max="50" value="19">
+    </label>
+  </div>
 
 <script>
 const video = document.getElementById('video');
@@ -224,8 +205,6 @@ const grainVal = document.getElementById('grain-val');
 const filmSelect = document.getElementById('film');
 const cameraSelect = document.getElementById('cameraSelect');
 const overlay = document.getElementById('colorOverlay');
-const radialTrigger = document.getElementById('cameraRadialTrigger');
-const radialMenu = document.getElementById('cameraRadialMenu');
 
 let currentStream = null;
 let grainAmount = +grainSlider.value;
@@ -236,18 +215,17 @@ let currentOpacity = 0.4;
 
 function updateOverlay() {
   const color = filterColors[currentFilterIndex];
-  if (color === 'none') {
+  if (film !== 'acros' || color === 'none') {
     overlay.style.backgroundColor = 'rgba(0,0,0,0)';
-  } else {
-    const rgba = {
-      red: `rgba(255,0,0,${currentOpacity})`,
-      yellow: `rgba(255,255,0,${currentOpacity})`,
-      green: `rgba(0,255,0,${currentOpacity})`
-    };
-    overlay.style.backgroundColor = rgba[color];
+    return;
   }
+  const rgba = {
+    red: `rgba(255,0,0,${currentOpacity})`,
+    yellow: `rgba(255,255,0,${currentOpacity})`,
+    green: `rgba(0,255,0,${currentOpacity})`
+  };
+  overlay.style.backgroundColor = rgba[color];
 }
-updateOverlay();
 
 document.addEventListener('touchstart', e => {
   touchStartX = e.touches[0].clientX;
@@ -255,14 +233,16 @@ document.addEventListener('touchstart', e => {
 }, { passive: true });
 
 document.addEventListener('touchend', e => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  const dy = e.changedTouches[0].clientY - touchStartY;
+  let dx = e.changedTouches[0].clientX - touchStartX;
+  let dy = e.changedTouches[0].clientY - touchStartY;
+  if (film !== 'acros') return;
+
   if (Math.abs(dx) > Math.abs(dy)) {
     if (dx < -30) currentFilterIndex = (currentFilterIndex + 1) % filterColors.length;
     else if (dx > 30) currentFilterIndex = (currentFilterIndex - 1 + filterColors.length) % filterColors.length;
   } else {
-    if (dy < -30) currentOpacity = Math.min(1.0, currentOpacity + 0.1);
-    else if (dy > 30) currentOpacity = Math.max(0, currentOpacity - 0.1);
+    if (dy < -30) currentOpacity = Math.min(currentOpacity + 0.1, 1.0);
+    else if (dy > 30) currentOpacity = Math.max(currentOpacity - 0.1, 0.0);
   }
   updateOverlay();
 }, { passive: true });
@@ -272,19 +252,41 @@ grainSlider.oninput = () => {
   grainVal.textContent = grainAmount;
 };
 
-filmSelect.onchange = () => film = filmSelect.value;
+filmSelect.onchange = () => {
+  film = filmSelect.value;
+  updateOverlay();
+};
+
 menuBtn.onclick = () => controls.classList.toggle('show');
 nextBtn.onclick = () => {
   video.style.display = 'block';
   photo.style.display = 'none';
   nextBtn.style.display = 'none';
 };
+
 cameraSelect.onchange = () => startCamera(cameraSelect.value);
+
+async function startCamera(deviceId = null) {
+  if (currentStream) currentStream.getTracks().forEach(track => track.stop());
+
+  const constraints = {
+    video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" }
+  };
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    currentStream = stream;
+    video.srcObject = stream;
+    await video.play();
+    await populateCameraOptions();
+  } catch (e) {
+    alert('Camera Error: ' + e.message);
+  }
+}
 
 async function populateCameraOptions() {
   const devices = await navigator.mediaDevices.enumerateDevices();
-  const videoInputs = devices.filter(device => device.kind === 'videoinput');
-  const currentId = cameraSelect.value;
+  const videoInputs = devices.filter(d => d.kind === 'videoinput');
   cameraSelect.innerHTML = '';
   videoInputs.forEach((device, i) => {
     const opt = document.createElement('option');
@@ -292,64 +294,125 @@ async function populateCameraOptions() {
     opt.textContent = device.label || `Camera ${i + 1}`;
     cameraSelect.appendChild(opt);
   });
-  if (currentId) cameraSelect.value = currentId;
 }
 
-async function startCamera(deviceId = null) {
-  if (currentStream) currentStream.getTracks().forEach(track => track.stop());
-  try {
-    const constraints = {
-      video: deviceId
-        ? { deviceId: { exact: deviceId } }
-        : { facingMode: { exact: "environment" } }
-    };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    currentStream = stream;
-    video.srcObject = stream;
-    await video.play();
-    await populateCameraOptions();
-  } catch (e) {
-    alert("Camera error: " + e.message);
+const cameraRadialTrigger = document.getElementById('cameraRadialTrigger');
+const cameraRadialMenu = document.getElementById('cameraRadialMenu');
+let radialTimeout, radialActive = false, currentHoveredOption = null;
+
+cameraRadialTrigger.addEventListener('pointerdown', () => {
+  radialTimeout = setTimeout(() => {
+    showCameraRadialMenu();
+    radialActive = true;
+  }, 300);
+});
+
+document.addEventListener('pointermove', e => {
+  if (!radialActive) return;
+  const options = document.querySelectorAll('.camera-option');
+  let closest = null, minDist = Infinity;
+  options.forEach(opt => {
+    const rect = opt.getBoundingClientRect();
+    const dx = e.clientX - (rect.left + rect.width / 2);
+    const dy = e.clientY - (rect.top + rect.height / 2);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < minDist && dist < 80) {
+      minDist = dist;
+      closest = opt;
+    }
+    opt.style.background = 'rgba(255,255,255,0.15)';
+  });
+  currentHoveredOption = closest;
+  if (closest) closest.style.background = 'rgba(255,255,255,0.4)';
+});
+
+document.addEventListener('pointerup', () => {
+  clearTimeout(radialTimeout);
+  if (radialActive && currentHoveredOption) {
+    const val = currentHoveredOption.getAttribute('data-device-id');
+    cameraSelect.value = val;
+    startCamera(val);
   }
+  cameraRadialMenu.innerHTML = '';
+  radialActive = false;
+});
+
+function showCameraRadialMenu() {
+  cameraRadialMenu.innerHTML = '';
+  const options = Array.from(cameraSelect.options);
+  const count = options.length;
+  const radius = 100;
+  const startAngle = -Math.PI / 4;
+  const spread = Math.PI / 2;
+
+  options.forEach((opt, index) => {
+    const angle = startAngle + (index * spread / Math.max(1, count - 1));
+    const x = Math.cos(angle) * radius + 100;
+    const y = Math.sin(angle) * radius + 100;
+    const btn = document.createElement('div');
+    btn.className = 'camera-option';
+    btn.style.left = `${x}px`;
+    btn.style.top = `${y}px`;
+    btn.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg)`;
+    btn.setAttribute('data-device-id', opt.value);
+    btn.textContent = opt.textContent;
+    cameraRadialMenu.appendChild(btn);
+  });
 }
 
 shutter.onclick = () => {
-  const w = video.videoWidth, h = video.videoHeight;
+  const w = video.videoWidth;
+  const h = video.videoHeight;
   const border = Math.floor(Math.min(w, h) * 0.09);
-  canvas.width = w + border * 2;
-  canvas.height = h + border * 2;
+  const finalW = w + border * 2;
+  const finalH = h + border * 2;
+  canvas.width = finalW;
+  canvas.height = finalH;
+
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, finalW, finalH);
   ctx.drawImage(video, border, border, w, h);
-  const imgData = ctx.getImageData(border, border, w, h);
-  const d = imgData.data;
-  for (let i = 0; i < d.length; i += 4) {
-    let [r, g, b] = [d[i], d[i+1], d[i+2]];
-    if (film === "acros") r = g = b = (r + g + b) / 3;
-    else if (film === "kodachrome") {
-      const avg = (r + g + b) / 3;
-      r = r * 0.85 + avg * 0.15;
-      g = g * 0.85 + avg * 0.15;
-      b = b * 0.85 + avg * 0.15;
-    }
-    if (grainAmount > 0) {
-      const n = (Math.random() - 0.5) * 2 * grainAmount;
-      r += n; g += n; b += n;
-    }
-    d[i] = Math.max(0, Math.min(255, r));
-    d[i+1] = Math.max(0, Math.min(255, g));
-    d[i+2] = Math.max(0, Math.min(255, b));
-  }
-  ctx.putImageData(imgData, border, border);
-  if (filterColors[currentFilterIndex] !== 'none') {
+
+  let imgData = ctx.getImageData(border, border, w, h);
+  let d = imgData.data;
+
+  // Overlay for Acros only BEFORE grayscale
+  if (film === 'acros' && filterColors[currentFilterIndex] !== 'none') {
     ctx.fillStyle = {
       red: `rgba(255,0,0,${currentOpacity})`,
       yellow: `rgba(255,255,0,${currentOpacity})`,
       green: `rgba(0,255,0,${currentOpacity})`
     }[filterColors[currentFilterIndex]];
     ctx.fillRect(border, border, w, h);
+    imgData = ctx.getImageData(border, border, w, h);
+    d = imgData.data;
   }
+
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i + 1], b = d[i + 2];
+
+    if (film === "acros") {
+      const avg = (r + g + b) / 3;
+      r = g = b = avg;
+    } else if (film === "kodachrome") {
+      const avg = (r + g + b) / 3;
+      r = r * 0.85 + avg * 0.15;
+      g = g * 0.85 + avg * 0.15;
+      b = b * 0.85 + avg * 0.15;
+    }
+
+    if (grainAmount > 0) {
+      const n = (Math.random() - 0.5) * 2 * grainAmount;
+      r += n; g += n; b += n;
+    }
+
+    d[i] = Math.max(0, Math.min(255, r));
+    d[i + 1] = Math.max(0, Math.min(255, g));
+    d[i + 2] = Math.max(0, Math.min(255, b));
+  }
+
+  ctx.putImageData(imgData, border, border);
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
   photo.style.display = 'block';
   video.style.display = 'none';
@@ -357,16 +420,6 @@ shutter.onclick = () => {
 };
 
 startCamera();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js');
-}
-</script>
-<script>
-document.addEventListener('contextmenu', e => {
-  if (e.target.id !== 'photo') e.preventDefault();
-}, { passive: false });
 </script>
 </body>
 </html>
