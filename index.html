@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -213,12 +214,15 @@
   <label>Film Grain (<span id="grain-val">19</span>)
     <input type="range" id="grain" min="0" max="50" value="19">
   </label>
-</div>
   
   <label>
     <input type="checkbox" id="addTextToggle">
     Border Text
   </label>
+
+  
+</div>
+  
 
 <script>
 const video = document.getElementById('video');
@@ -293,7 +297,7 @@ async function populateCameraOptions() {
   videoInputs.forEach((device, i) => {
     const opt = document.createElement('option');
     opt.value = device.deviceId;
-    opt.textContent = device.label || `Camera ${i + 1}`;
+    opt.textContent = device.label || Camera ${i + 1};
     cameraSelect.appendChild(opt);
   });
 
@@ -379,9 +383,9 @@ function showCameraRadialMenu() {
 
     const btn = document.createElement('div');
     btn.className = 'camera-option';
-    btn.style.left = `${x}px`;
-    btn.style.top = `${y}px`;
-    btn.style.transform = `translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg)`;
+    btn.style.left = ${x}px;
+    btn.style.top = ${y}px;
+    btn.style.transform = translate(-50%, -50%) rotate(${angle * 180 / Math.PI}deg);
     btn.style.transformOrigin = 'left center';
     btn.textContent = opt.textContent;
     btn.setAttribute('data-device-id', opt.value);
@@ -390,14 +394,16 @@ function showCameraRadialMenu() {
 }
 
 
-
 shutter.onclick = () => {
   const w = video.videoWidth;
   const h = video.videoHeight;
   const border = Math.floor(Math.min(w, h) * 0.09);
 
+  const addText = document.getElementById('addTextToggle').checked;
+  const extraBorder = addText ? Math.floor(border * 1.2) : 0;
+
   const finalW = w + border * 2;
-  const finalH = h + border * 2;
+  const finalH = h + border * 2 + extraBorder;
   canvas.width = finalW;
   canvas.height = finalH;
 
@@ -433,27 +439,16 @@ shutter.onclick = () => {
   }
 
   ctx.putImageData(imgData, border, border);
-  const addText = document.getElementById('addTextToggle').checked;
-if (addText) {
-  const userText = prompt("Enter caption for the photo:");
-  if (userText) {
-    // Recalculate bottom border for extra space
-    const extraBorder = Math.floor(border * 1.2);
-    canvas.height = finalH + extraBorder;
-    
-    // Shift existing image down
-    const imgData = ctx.getImageData(0, 0, finalW, finalH);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, finalW, finalH + extraBorder);
-    ctx.putImageData(imgData, 0, 0);
 
-    // Add handwritten caption
-    ctx.fillStyle = "#000";
-    ctx.font = `${Math.floor(border * 0.6)}px 'Patrick Hand', cursive`;
-    ctx.textAlign = "center";
-    ctx.fillText(userText, finalW / 2, finalH + extraBorder / 1.5);
+  if (addText) {
+    const userText = prompt("Enter caption for the photo:");
+    if (userText) {
+      ctx.fillStyle = "#000";
+      ctx.font = `${Math.floor(border * 0.6)}px 'Patrick Hand', cursive`;
+      ctx.textAlign = "center";
+      ctx.fillText(userText, finalW / 2, finalH - extraBorder / 2);
+    }
   }
-}
 
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
   photo.style.display = 'block';
