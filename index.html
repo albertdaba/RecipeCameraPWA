@@ -8,6 +8,11 @@
   <meta name="theme-color" content="#000000">
   <link rel="apple-touch-icon" href="icon-192.png">
   <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
     body {
       margin: 0;
       background: #000;
@@ -99,7 +104,6 @@
       cursor: pointer;
       z-index: 20;
       backdrop-filter: blur(6px);
-      user-select: none;
     }
     #cameraRadialMenu {
       position: fixed;
@@ -145,17 +149,16 @@
       max-width: 480px;
       z-index: 20;
     }
-
     #close-controls {
-  background: transparent;
-  color: white;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  padding: 4px 8px;
-  margin-bottom: 8px;
-  align-self: flex-end;
-}
+      background: transparent;
+      color: white;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      margin-bottom: 8px;
+      align-self: flex-end;
+    }
     #controls.show {
       transform: translateX(-50%) translateY(0);
       opacity: 1;
