@@ -145,6 +145,17 @@
       max-width: 480px;
       z-index: 20;
     }
+
+    #close-controls {
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-bottom: 8px;
+  align-self: flex-end;
+}
     #controls.show {
       transform: translateX(-50%) translateY(0);
       opacity: 1;
@@ -180,17 +191,18 @@
   <button id="shutter"></button>
   <div id="cameraRadialTrigger"></div>
   <div id="cameraRadialMenu"></div>
-  <div id="controls">
-    <label>Film Simulation
-      <select id="film">
-        <option value="acros" selected>Acros (Monochrome)</option>
-        <option value="kodachrome">Kodachrome</option>
-      </select>
-    </label>
-    <label>Film Grain (<span id="grain-val">19</span>)
-      <input type="range" id="grain" min="0" max="50" value="19">
-    </label>
-  </div>
+<div id="controls">
+  <button id="close-controls" style="align-self: flex-end;">✕</button>
+  <label>Film Simulation
+    <select id="film">
+      <option value="kodachrome">Kodachrome</option>
+      <option value="acros">Acros (Monochrome)</option>
+    </select>
+  </label>
+  <label>Film Grain (<span id="grain-val">19</span>)
+    <input type="range" id="grain" min="0" max="50" value="19">
+  </label>
+</div>
 
 <script>
 const video = document.getElementById('video');
@@ -212,6 +224,7 @@ let film = filmSelect.value;
 let filterColors = ['none', 'red', 'yellow', 'green'];
 let currentFilterIndex = 0;
 let currentOpacity = 0.4;
+let pointerMoved = false;
 
 function updateOverlay() {
   const color = filterColors[currentFilterIndex];
@@ -307,35 +320,56 @@ cameraRadialTrigger.addEventListener('pointerdown', () => {
   }, 300);
 });
 
-document.addEventListener('pointermove', e => {
+document.addEventListener('pointermove', (e) => {
   if (!radialActive) return;
+  pointerMoved = true; // Flag to require actual movement
+
   const options = document.querySelectorAll('.camera-option');
-  let closest = null, minDist = Infinity;
+  let closest = null;
+  let minDist = Infinity;
+
   options.forEach(opt => {
     const rect = opt.getBoundingClientRect();
-    const dx = e.clientX - (rect.left + rect.width / 2);
-    const dy = e.clientY - (rect.top + rect.height / 2);
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
     const dist = Math.sqrt(dx * dx + dy * dy);
+
     if (dist < minDist && dist < 80) {
       minDist = dist;
       closest = opt;
     }
+
     opt.style.background = 'rgba(255,255,255,0.15)';
   });
+
   currentHoveredOption = closest;
-  if (closest) closest.style.background = 'rgba(255,255,255,0.4)';
+
+  if (closest) {
+    closest.style.background = 'rgba(255,255,255,0.4)';
+  }
 });
 
 document.addEventListener('pointerup', () => {
   clearTimeout(radialTimeout);
-  if (radialActive && currentHoveredOption) {
-    const val = currentHoveredOption.getAttribute('data-device-id');
-    cameraSelect.value = val;
-    startCamera(val);
+
+  if (!radialActive) return;
+
+  // Only allow selection if the user actually moved the pointer
+  if (pointerMoved && currentHoveredOption) {
+    const value = currentHoveredOption.getAttribute('data-device-id');
+    cameraSelect.value = value;
+    startCamera(value);
   }
+
   cameraRadialMenu.innerHTML = '';
   radialActive = false;
+  currentHoveredOption = null;
+  pointerMoved = false; // Reset for next time
 });
+
 
 function showCameraRadialMenu() {
   cameraRadialMenu.innerHTML = '';
@@ -417,6 +451,9 @@ shutter.onclick = () => {
   photo.style.display = 'block';
   video.style.display = 'none';
   nextBtn.style.display = 'block';
+};
+document.getElementById('close-controls').onclick = () => {
+  controls.classList.remove('show');
 };
 
 startCamera();
