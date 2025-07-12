@@ -116,6 +116,12 @@
       pointer-events: none;
       z-index: 21;
     }
+
+#photo {
+  -webkit-user-drag: auto;
+  touch-action: manipulation;
+}
+
     .camera-option {
       position: absolute;
       background: rgba(255, 255, 255, 0.15);
@@ -187,7 +193,7 @@
   <select id="cameraSelect"></select>
   <video id="video" autoplay playsinline></video>
   <div id="colorOverlay"></div>
-  <img id="photo" style="display:none">
+<img id="photo" alt="Tap and hold to save" style="visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 0.3s;">
   <canvas id="canvas" style="display:none"></canvas>
   <div id="menu-btn">☰</div>
   <div id="next-btn">↩ Next</div>
@@ -275,8 +281,11 @@ filmSelect.onchange = () => {
 
 menuBtn.onclick = () => controls.classList.toggle('show');
 nextBtn.onclick = () => {
-  video.style.display = 'block';
-  photo.style.display = 'none';
+photo.style.visibility = 'hidden';
+photo.style.opacity = '0';
+photo.style.pointerEvents = 'none';
+video.style.visibility = 'visible';
+video.style.opacity = '1';
   nextBtn.style.display = 'none';
 };
 
@@ -451,8 +460,11 @@ shutter.onclick = () => {
 
   ctx.putImageData(imgData, border, border);
   photo.src = canvas.toDataURL('image/jpeg', 1.0);
-  photo.style.display = 'block';
-  video.style.display = 'none';
+ photo.style.visibility = 'visible';
+photo.style.opacity = '1';
+photo.style.pointerEvents = 'auto';
+video.style.visibility = 'hidden';
+video.style.opacity = '0';
   nextBtn.style.display = 'block';
 };
 document.getElementById('close-controls').onclick = () => {
